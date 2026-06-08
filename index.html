@@ -508,7 +508,7 @@ td.truncate{max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ell
         <div class="grid3">
           <div class="form-field"><label>Nota Fiscal (NF)</label><input type="text" id="rNF" placeholder="Número da NF"></div>
           <div class="form-field"><label>Número do Pedido</label><input type="text" id="rPedido" placeholder="Número do pedido"></div>
-          <div class="form-field" id="rStatusField"><label>Status</label>
+          <div class="form-field" id="rStatusField" style="display:none"><label>Status</label>
             <select id="rStatus">
               <option>Em Campo</option>
               <option>Retornado</option>
@@ -571,6 +571,17 @@ td.truncate{max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ell
         <div class="form-field"><label>Turno</label>
           <select id="uTurno"><option value="">Selecione</option><option>1º Turno</option><option>2º Turno</option><option>Comercial</option></select>
         </div>
+        <div class="form-field"><label>Setor</label>
+          <select id="uSetor">
+            <option value="">Selecione</option>
+            <option value="Expedicao">Expedição</option>
+            <option value="Recebimento">Recebimento</option>
+            <option value="Logistica">Logística</option>
+            <option value="Compras">Compras</option>
+            <option value="Manutencao">Manutenção</option>
+            <option value="Direcao">Direção</option>
+          </select>
+        </div>
       </div>
       <div class="form-field"><label>Cargo / Nível de Acesso</label>
         <select id="uRole">
@@ -617,6 +628,8 @@ function setupLogo(){
     if(l2){ l2.src=logoSrc; $('appLogoFallback').style.display='none'; }
   }
 }
+
+// ALTERAÇÕES SOLICITADAS: setor, permissões por setor, status automático pendente/retornado e remoção de extraviado ainda precisam ser integradas ao backend Supabase.
 
 /* ══════════════════════════════════════════════
    STATE
