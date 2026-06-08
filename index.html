@@ -359,7 +359,6 @@ td.truncate{max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ell
           <div class="stat"><div class="stat-label">Em Campo</div><div class="stat-val" id="sSaida" style="color:var(--red)">—</div></div>
           <div class="stat"><div class="stat-label">Retornados</div><div class="stat-val" id="sRetorno" style="color:var(--green)">—</div></div>
           <div class="stat"><div class="stat-label">Manutenção</div><div class="stat-val" id="sManutencao" style="color:var(--amber)">—</div></div>
-          <div class="stat"><div class="stat-label">Extraviados</div><div class="stat-val" id="sExtraviado" style="color:var(--red)">—</div></div>
         </div>
 
         <!-- Toolbar -->
@@ -370,10 +369,10 @@ td.truncate{max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ell
           </div>
           <select class="filter-sel" id="fStatus" onchange="renderRegistros()">
             <option value="">Todos os status</option>
+            <option>Pendente</option>
             <option>Em Campo</option>
             <option>Retornado</option>
             <option>Em Manutenção</option>
-            <option>Extraviado</option>
             <option>Cancelado</option>
           </select>
           <button class="btn btn-sm" onclick="loadRegistros()" title="Atualizar">
@@ -424,7 +423,7 @@ td.truncate{max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ell
         <div class="table-card">
           <div class="table-wrap">
             <table>
-              <thead><tr><th>Usuário</th><th>E-mail</th><th>Matrícula</th><th>Turno</th><th>Nível</th><th>Ações</th></tr></thead>
+              <thead><tr><th>Usuário</th><th>E-mail</th><th>Matrícula</th><th>Turno</th><th>Setor</th><th>Nível</th><th>Ações</th></tr></thead>
               <tbody id="tbUsers"></tbody>
             </table>
             <div id="emptyUsers" class="empty" style="display:none"><p>Nenhum usuário</p></div>
@@ -473,8 +472,23 @@ td.truncate{max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ell
         </div>
         <div class="form-field"><label>Observação sobre condição (saída)</label><textarea id="rObsSaida" placeholder="Descreva detalhes das condições, avarias ou observações..."></textarea></div>
         <div class="form-field"><label>Acompanhante Envio (Expedição)</label><input type="text" id="rAcompExpedicao" placeholder="Nome do acompanhante na expedição"></div>
+        <!-- Foto de saída — obrigatória para Expedição -->
+        <div class="form-field" id="fotoSaidaField">
+          <label>Foto do Equipamento na Saída <span style="font-size:11px;color:var(--text3);font-weight:400">(JPG ou PNG — obrigatória para Expedição)</span></label>
+          <div id="fotoSaidaPreviewWrap" style="display:none;margin-bottom:8px">
+            <img id="fotoSaidaPreview" src="" alt="Preview" style="max-height:160px;border-radius:var(--radius);border:1px solid var(--border)">
+          </div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <button type="button" class="btn btn-sm" onclick="document.getElementById('fotoSaidaInput').click()">Selecionar Foto</button>
+            <span id="fotoSaidaNome" style="font-size:12px;color:var(--text3)">Nenhuma foto selecionada</span>
+          </div>
+          <input type="file" id="fotoSaidaInput" accept="image/*" style="display:none" onchange="previewFotoSaida(event)">
+          <input type="hidden" id="fotoSaidaUrl">
+        </div>
       </div>
 
+      <!-- RETORNO — visível para Recebimento, Logística e demais (não para Expedição) -->
+      <div id="secaoRetorno">
       <!-- RETORNO -->
       <div class="section-card">
         <div class="section-card-title">
@@ -508,17 +522,19 @@ td.truncate{max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ell
         <div class="grid3">
           <div class="form-field"><label>Nota Fiscal (NF)</label><input type="text" id="rNF" placeholder="Número da NF"></div>
           <div class="form-field"><label>Número do Pedido</label><input type="text" id="rPedido" placeholder="Número do pedido"></div>
-          <div class="form-field" id="rStatusField" style="display:none"><label>Status</label>
-            <select id="rStatus">
-              <option>Em Campo</option>
-              <option>Retornado</option>
-              <option>Em Manutenção</option>
-              <option>Extraviado</option>
-              <option>Cancelado</option>
+          <div class="form-field" id="rStatusField"><label>Status</label>
+            <select id="rStatus" disabled>
+              <option value="Pendente">Pendente</option>
+              <option value="Em Campo">Em Campo</option>
+              <option value="Retornado">Retornado</option>
+              <option value="Em Manutenção">Em Manutenção</option>
+              <option value="Cancelado">Cancelado</option>
             </select>
+            <p id="rStatusDisplay" style="font-size:13px;font-weight:600;margin-top:4px;display:none"></p>
           </div>
         </div>
       </div>
+      </div><!-- /secaoRetorno -->
 
       <!-- ANEXOS -->
       <div class="form-field">
@@ -571,17 +587,17 @@ td.truncate{max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ell
         <div class="form-field"><label>Turno</label>
           <select id="uTurno"><option value="">Selecione</option><option>1º Turno</option><option>2º Turno</option><option>Comercial</option></select>
         </div>
-        <div class="form-field"><label>Setor</label>
-          <select id="uSetor">
-            <option value="">Selecione</option>
-            <option value="Expedicao">Expedição</option>
-            <option value="Recebimento">Recebimento</option>
-            <option value="Logistica">Logística</option>
-            <option value="Compras">Compras</option>
-            <option value="Manutencao">Manutenção</option>
-            <option value="Direcao">Direção</option>
-          </select>
-        </div>
+      </div>
+      <div class="form-field"><label>Setor</label>
+        <select id="uSetor">
+          <option value="">Selecione</option>
+          <option value="expedicao">Expedição</option>
+          <option value="recebimento">Recebimento</option>
+          <option value="logistica">Logística</option>
+          <option value="compras">Compras</option>
+          <option value="manutencao">Manutenção</option>
+          <option value="direcao">Direção</option>
+        </select>
       </div>
       <div class="form-field"><label>Cargo / Nível de Acesso</label>
         <select id="uRole">
@@ -629,14 +645,12 @@ function setupLogo(){
   }
 }
 
-// ALTERAÇÕES SOLICITADAS: setor, permissões por setor, status automático pendente/retornado e remoção de extraviado ainda precisam ser integradas ao backend Supabase.
-
 /* ══════════════════════════════════════════════
    STATE
 ══════════════════════════════════════════════ */
 let currentUser=null, currentProfile=null;
 let allRegistros=[], allUsers=[];
-let pendingFiles=[], editingUserId=null, newPhotoFile=null;
+let pendingFiles=[], editingUserId=null, newPhotoFile=null, pendingFotoSaida=null;
 let currentPage='registros';
 
 /* ══════════════════════════════════════════════
@@ -751,8 +765,11 @@ function setupApp(){
   $('appScreen').style.display='block';
   const p=currentProfile;
   const roleMap={admin:'Administrador',lider:'Líder',usuario:'Usuário'};
+  const setorMap={expedicao:'Expedição',recebimento:'Recebimento',logistica:'Logística',compras:'Compras',manutencao:'Manutenção',direcao:'Direção'};
   $('topName').textContent=p?.nome||'Usuário';
-  $('topRole').textContent=roleMap[p?.role]||'Usuário';
+  const roleTxt=roleMap[p?.role]||'Usuário';
+  const setorTxt=p?.setor?` · ${setorMap[p.setor]||p.setor}`:'';
+  $('topRole').textContent=roleTxt+setorTxt;
   const av=$('topAvatar');
   if(p?.foto_url) av.innerHTML=`<img src="${p.foto_url}" alt="">`;
   else av.textContent=(p?.nome||'U').slice(0,2).toUpperCase();
@@ -843,11 +860,10 @@ function updateStats(){
   $('sSaida').textContent=allRegistros.filter(r=>r.status==='Em Campo').length;
   $('sRetorno').textContent=allRegistros.filter(r=>r.status==='Retornado').length;
   $('sManutencao').textContent=allRegistros.filter(r=>r.status==='Em Manutenção').length;
-  $('sExtraviado').textContent=allRegistros.filter(r=>r.status==='Extraviado').length;
 }
 
 const statusBadge={
-  'Em Campo':'b-saida','Retornado':'b-retorno',
+  'Em Campo':'b-saida','Retornado':'b-retorno','Pendente':'b-pendente',
   'Em Manutenção':'b-manutencao','Extraviado':'b-extraviado','Cancelado':'b-cancelado'
 };
 const condBadge={'Bom estado':'b-ok','Com avarias':'b-avariado','Necessita revisão':'b-pendente'};
@@ -862,8 +878,10 @@ function renderRegistros(){
   const tb=$('tbRegistros');
   $('emptyRegistros').style.display=filtered.length?'none':'block';
   $('footerReg').textContent=`${filtered.length} de ${allRegistros.length} registro${allRegistros.length!==1?'s':''}`;
-  const canEdit=currentProfile?.role==='lider'||currentProfile?.role==='admin';
-  const canDelete=currentProfile?.role==='admin';
+  const role=currentProfile?.role||'usuario';
+  const setor=currentProfile?.setor||'';
+  const canEdit=role==='lider'||role==='admin'||setor==='expedicao'||setor==='recebimento'||setor==='logistica'||setor==='compras'||setor==='manutencao'||setor==='direcao';
+  const canDelete=role==='admin';
   tb.innerHTML=filtered.map(r=>`
     <tr>
       <td class="mono">#${r.id}</td>
@@ -878,7 +896,7 @@ function renderRegistros(){
       <td class="truncate">${esc(r.acomp_recebimento||'—')}</td>
       <td class="mono">${esc(r.nf||'—')}</td>
       <td class="mono">${esc(r.pedido||'—')}</td>
-      <td><span class="badge ${statusBadge[r.status]||'b-cancelado'}">${esc(r.status||'—')}</span></td>
+      <td><span class="badge ${statusBadge[r.status]||'b-pendente'}">${esc(r.status||'Pendente')}</span></td>
       <td><div class="actions">
         ${canEdit?`<button class="icon-btn" title="Editar" onclick="editRegistro(${r.id})">${iconEdit}</button>`:''}
         ${canDelete?`<button class="icon-btn del" title="Excluir" onclick="deleteRegistro(${r.id})">${iconTrash}</button>`:''}
@@ -911,13 +929,65 @@ function openRegistroModal(r=null){
   $('rAcompRecebimento').value=r?.acomp_recebimento||'';
   $('rNF').value=r?.nf||'';
   $('rPedido').value=r?.pedido||'';
-  $('rStatus').value=r?.status||'Em Campo';
+  $('fotoSaidaUrl').value=r?.foto_saida_url||'';
+  if(r?.foto_saida_url){
+    $('fotoSaidaPreview').src=r.foto_saida_url;
+    $('fotoSaidaPreviewWrap').style.display='';
+    $('fotoSaidaNome').textContent='Foto existente';
+  } else {
+    $('fotoSaidaPreviewWrap').style.display='none';
+    $('fotoSaidaNome').textContent='Nenhuma foto selecionada';
+  }
 
-  const canStat=currentProfile?.role==='lider'||currentProfile?.role==='admin';
-  $('rStatusField').style.display=canStat?'':'none';
+  // Calcular status automaticamente
+  const autoStatus = calcStatus(r);
+  $('rStatus').value = autoStatus;
+
+  // Permissões por setor
+  const setor = currentProfile?.setor||'';
+  const role = currentProfile?.role||'usuario';
+  const isAdmin = role==='admin';
+  const isExpedicao = setor==='expedicao' && !isAdmin;
+  const isRecebimento = setor==='recebimento' && !isAdmin;
+  // Expedição: só preenche dados de saída
+  // Recebimento: vê dados de saída (readonly) + preenche retorno
+  // Logística e demais: veem tudo
+  const secaoRetorno=$('secaoRetorno');
+  if(isExpedicao){
+    secaoRetorno.style.display='none';
+  } else {
+    secaoRetorno.style.display='';
+    // Recebimento: campos de saída somente leitura
+    const saidaFields=['rDataSaida','rRespSaida','rPrestador','rCondicaoSaida','rObsSaida','rAcompExpedicao'];
+    saidaFields.forEach(fid=>{
+      const el=$(fid);if(!el)return;
+      if(isRecebimento){ el.readOnly=true; if(el.tagName==='SELECT') el.disabled=true; }
+      else { el.readOnly=false; if(el.tagName==='SELECT') el.disabled=false; }
+    });
+  }
+
+  // Status: somente admin pode alterar
+  const sel=$('rStatus');
+  const disp=$('rStatusDisplay');
+  if(isAdmin){
+    sel.disabled=false; sel.style.display=''; disp.style.display='none';
+  } else {
+    sel.disabled=true; sel.style.display='none';
+    disp.style.display=''; disp.textContent=autoStatus;
+  }
+
+  // Foto saída: somente expedição e admin podem adicionar
+  $('fotoSaidaField').style.display=(isExpedicao||isAdmin||(!isRecebimento&&setor!=='recebimento'))?'':'none';
 
   if(r?.anexos?.length) renderExistingFiles(r.anexos);
   openModal('mRegistro');
+}
+
+function calcStatus(r){
+  if(!r) return 'Pendente';
+  const temRetorno = r.data_retorno && r.resp_retorno && r.condicao_retorno && r.acomp_recebimento;
+  if(temRetorno) return 'Retornado';
+  return 'Pendente';
 }
 
 function editRegistro(id){ const r=allRegistros.find(x=>x.id===id);if(r)openRegistroModal(r); }
@@ -926,7 +996,28 @@ async function saveRegistro(){
   const id=$('rEditId').value;
   const errEl=$('mRegErr');
   errEl.style.display='none';
-  const canStat=currentProfile?.role==='lider'||currentProfile?.role==='admin';
+  const isAdmin=currentProfile?.role==='admin';
+  const setor=currentProfile?.setor||'';
+  const isExpedicao=setor==='expedicao'&&!isAdmin;
+
+  // Upload foto de saída se houver arquivo novo
+  let foto_saida_url=$('fotoSaidaUrl').value||null;
+  if(pendingFotoSaida){
+    const path=`saida/${Date.now()}_${pendingFotoSaida.name}`;
+    const {error:upErr}=await sb.storage.from('anexos').upload(path,pendingFotoSaida,{upsert:true});
+    if(!upErr){
+      const {data:ud}=sb.storage.from('anexos').getPublicUrl(path);
+      foto_saida_url=ud.publicUrl;
+    }
+  }
+
+  // Calcular status automaticamente
+  const dataRetorno=isExpedicao?null:(v('rDataRetorno')||null);
+  const respRetorno=isExpedicao?null:(v('rRespRetorno')||null);
+  const condRetorno=isExpedicao?null:(v('rCondicaoRetorno')||null);
+  const acompRecebimento=isExpedicao?null:(v('rAcompRecebimento')||null);
+  const temRetorno=dataRetorno&&respRetorno&&condRetorno&&acompRecebimento;
+  const autoStatus=isAdmin?v('rStatus'):(temRetorno?'Retornado':'Pendente');
 
   const payload={
     data_saida:v('rDataSaida')||null,
@@ -935,18 +1026,20 @@ async function saveRegistro(){
     condicao_saida:v('rCondicaoSaida')||null,
     obs_saida:v('rObsSaida')||null,
     acomp_expedicao:v('rAcompExpedicao')||null,
-    data_retorno:v('rDataRetorno')||null,
-    resp_retorno:v('rRespRetorno')||null,
-    condicao_retorno:v('rCondicaoRetorno')||null,
-    obs_retorno:v('rObsRetorno')||null,
-    acomp_recebimento:v('rAcompRecebimento')||null,
-    nf:v('rNF')||null,
-    pedido:v('rPedido')||null,
-    status:canStat?v('rStatus'):'Em Campo',
+    foto_saida_url,
+    data_retorno:dataRetorno,
+    resp_retorno:respRetorno,
+    condicao_retorno:condRetorno,
+    obs_retorno:isExpedicao?null:(v('rObsRetorno')||null),
+    acomp_recebimento:acompRecebimento,
+    nf:isExpedicao?null:(v('rNF')||null),
+    pedido:isExpedicao?null:(v('rPedido')||null),
+    status:autoStatus,
   };
 
   if(!payload.data_saida){showEl(errEl,'A data de saída é obrigatória.');return;}
   if(!payload.prestador){showEl(errEl,'O prestador de serviço é obrigatório.');return;}
+  if(isExpedicao&&!foto_saida_url){showEl(errEl,'A foto do equipamento na saída é obrigatória para Expedição.');return;}
 
   const btn=$('savRegBtn'); setBtnLoading(btn,'Salvando...');
 
@@ -973,6 +1066,7 @@ async function saveRegistro(){
     }
   }
 
+  pendingFotoSaida=null;
   resetBtn(btn,'Salvar');
   toast(id?'Registro atualizado!':'Registro criado!','ok');
   closeModal('mRegistro');
@@ -991,6 +1085,18 @@ async function deleteRegistro(id){
 /* ══════════════════════════════════════════════
    ANEXOS
 ══════════════════════════════════════════════ */
+function previewFotoSaida(e){
+  const f=e.target.files[0];if(!f)return;
+  pendingFotoSaida=f;
+  $('fotoSaidaNome').textContent=f.name;
+  const r=new FileReader();
+  r.onload=ev=>{
+    $('fotoSaidaPreview').src=ev.target.result;
+    $('fotoSaidaPreviewWrap').style.display='';
+  };
+  r.readAsDataURL(f);
+}
+
 function handleFileSelect(e){ addFiles(Array.from(e.target.files)); e.target.value=''; }
 function handleDrop(e){
   e.preventDefault(); $('fileDrop').style.borderColor='';
@@ -1063,12 +1169,14 @@ function renderUsers(){
   $('emptyUsers').style.display=allUsers.length?'none':'block';
   const roleBadge={admin:'b-admin',lider:'b-lider',usuario:'b-usuario'};
   const roleLabel={admin:'Admin',lider:'Líder',usuario:'Usuário'};
+  const setorLabel={expedicao:'Expedição',recebimento:'Recebimento',logistica:'Logística',compras:'Compras',manutencao:'Manutenção',direcao:'Direção'};
   tb.innerHTML=allUsers.map(u=>`
     <tr>
       <td><div class="t-avatar">${(u.nome||'U').slice(0,2).toUpperCase()}</div><strong>${esc(u.nome)}</strong></td>
       <td>${esc(u.email||'—')}</td>
       <td class="mono">${esc(u.matricula||'—')}</td>
       <td>${esc(u.turno||'—')}</td>
+      <td>${esc(setorLabel[u.setor]||u.setor||'—')}</td>
       <td><span class="badge ${roleBadge[u.role]||'b-usuario'}">${roleLabel[u.role]||'Usuário'}</span></td>
       <td><button class="icon-btn" onclick="openUserModal('${u.id}')">${iconEdit}</button></td>
     </tr>`).join('');
@@ -1097,6 +1205,7 @@ function openUserModal(uid){
   $('uMatricula').value=u.matricula||'';
   $('uTurno').value=u.turno||'';
   $('uRole').value=u.role||'usuario';
+  $('uSetor').value=u.setor||'';
   $('uNewPass').value='';
   $('mUserErr').style.display='none';$('mUserOk').style.display='none';
   const rf=$('uRole'),rw=rf.closest('.form-field');
@@ -1134,6 +1243,7 @@ async function saveUser(){
   const payload={
     nome:v('uNome'),email:v('uEmail')||null,
     matricula:v('uMatricula')||null,turno:v('uTurno')||null,
+    setor:v('uSetor')||null,
     role:isAdmin?v('uRole'):orig,foto_url
   };
   const btn=$('savUserBtn');setBtnLoading(btn,'Salvando...');
