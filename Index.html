@@ -1,0 +1,1141 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>World Post — Controle de Equipamentos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<style>
+:root{
+  --wp-blue:#1B2FA6;--wp-blue2:#152480;
+  --bg:#F0F2F7;--surface:#FFFFFF;--surface2:#F7F8FC;
+  --border:#DDE1ED;--border2:#C5CBDF;
+  --text:#111827;--text2:#4B5563;--text3:#9CA3AF;
+  --blue-lt:#EEF0FB;--amber:#92600A;--amber-lt:#FEF3C7;
+  --red:#991B1B;--red-lt:#FEE2E2;
+  --green:#166534;--green-lt:#DCFCE7;--gray-lt:#F3F4F6;
+  --radius:6px;--radius-lg:10px;--radius-xl:14px;
+  --shadow:0 1px 3px rgba(0,0,0,0.07),0 1px 2px rgba(0,0,0,0.04);
+  --shadow-md:0 4px 12px rgba(0,0,0,0.1);
+  --font:'Barlow',sans-serif;--font-cond:'Barlow Condensed',sans-serif;--mono:'JetBrains Mono',monospace;
+  --sidebar:220px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:14px;line-height:1.5;min-height:100vh}
+
+/* ── LOGIN ── */
+#loginScreen{display:flex;align-items:center;justify-content:center;min-height:100vh;background:linear-gradient(135deg,#0D1B6E 0%,#1B2FA6 50%,#2541C4 100%);padding:24px;position:relative;overflow:hidden}
+#loginScreen::before{content:'';position:absolute;inset:0;background:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")}
+.login-box{width:100%;max-width:420px;position:relative;z-index:1}
+.login-logo-wrap{text-align:center;margin-bottom:32px}
+.login-logo-wrap img{height:56px;filter:brightness(0) invert(1)}
+.login-logo-wrap .txt-logo{color:#fff;font-family:var(--font-cond);font-size:28px;font-weight:700;letter-spacing:2px}
+.login-card{background:rgba(255,255,255,0.97);border-radius:var(--radius-xl);padding:32px;box-shadow:0 20px 60px rgba(0,0,0,0.3)}
+.login-card h2{font-family:var(--font-cond);font-size:22px;font-weight:700;letter-spacing:0.5px;color:var(--wp-blue);margin-bottom:4px}
+.login-card p{font-size:13px;color:var(--text2);margin-bottom:24px}
+.tabs{display:flex;background:var(--bg);border-radius:var(--radius);padding:3px;margin-bottom:22px}
+.tab{flex:1;padding:8px;border:none;background:transparent;border-radius:calc(var(--radius) - 1px);font-family:var(--font-cond);font-size:13px;font-weight:600;letter-spacing:0.5px;text-transform:uppercase;color:var(--text3);cursor:pointer;transition:all .15s}
+.tab.active{background:var(--wp-blue);color:#fff;box-shadow:0 2px 6px rgba(27,47,166,0.3)}
+.form-field{margin-bottom:14px}
+.form-field label{display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:var(--text2);margin-bottom:5px}
+.form-field input,.form-field select,.form-field textarea{width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:var(--radius);font-family:var(--font);font-size:14px;color:var(--text);background:#fff;outline:none;transition:border-color .15s}
+.form-field input:focus,.form-field select:focus,.form-field textarea:focus{border-color:var(--wp-blue);box-shadow:0 0 0 3px rgba(27,47,166,0.12)}
+.form-field textarea{resize:vertical;min-height:70px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:10px 18px;border:1.5px solid var(--border);border-radius:var(--radius);font-family:var(--font-cond);font-size:13px;font-weight:600;letter-spacing:0.5px;text-transform:uppercase;cursor:pointer;background:#fff;color:var(--text);transition:all .15s;white-space:nowrap}
+.btn:hover{background:var(--bg);border-color:var(--border2)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn-primary{background:var(--wp-blue);color:#fff;border-color:var(--wp-blue)}
+.btn-primary:hover{background:var(--wp-blue2);border-color:var(--wp-blue2)}
+.btn-sm{padding:6px 12px;font-size:12px}
+.btn-full{width:100%}
+.btn-danger{color:var(--red);border-color:#FCA5A5}
+.btn-danger:hover{background:var(--red-lt)}
+.btn-success{background:var(--green);color:#fff;border-color:var(--green)}
+.msg-err{background:var(--red-lt);color:var(--red);border:1.5px solid #FCA5A5;border-radius:var(--radius);padding:10px 14px;font-size:13px;margin-bottom:14px;display:none}
+.msg-ok{background:var(--green-lt);color:var(--green);border:1.5px solid #86EFAC;border-radius:var(--radius);padding:10px 14px;font-size:13px;margin-bottom:14px;display:none}
+.spin{display:inline-block;width:13px;height:13px;border:2px solid rgba(255,255,255,.35);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite}
+.spin-dark{border-color:rgba(27,47,166,.2);border-top-color:var(--wp-blue)}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── APP SHELL ── */
+#appScreen{display:none;min-height:100vh}
+.topbar{height:58px;background:var(--wp-blue);display:flex;align-items:center;justify-content:space-between;padding:0 20px;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(27,47,166,0.4)}
+.topbar-left{display:flex;align-items:center;gap:12px}
+.topbar-logo-txt{color:#fff;font-family:var(--font-cond);font-size:18px;font-weight:700;letter-spacing:1.5px}
+.topbar-logo img{height:34px;filter:brightness(0) invert(1)}
+.topbar-right{display:flex;align-items:center;gap:10px}
+.user-pill{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.15);border-radius:20px;padding:4px 12px 4px 4px;cursor:pointer}
+.user-pill:hover{background:rgba(255,255,255,.22)}
+.uavatar{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--font-cond);font-size:11px;font-weight:700;overflow:hidden;background:rgba(255,255,255,.3);color:#fff;flex-shrink:0}
+.uavatar img{width:100%;height:100%;object-fit:cover}
+.uname{font-size:13px;font-weight:600;color:#fff;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.urole{font-size:11px;color:rgba(255,255,255,.7)}
+.layout{display:flex;min-height:calc(100vh - 58px)}
+
+/* ── SIDEBAR ── */
+.sidebar{width:var(--sidebar);background:var(--surface);border-right:1px solid var(--border);flex-shrink:0;display:flex;flex-direction:column;padding:16px 0}
+.nav-section{padding:0 12px;margin-bottom:8px}
+.nav-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text3);padding:0 8px;margin-bottom:6px}
+.nav-item{display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:var(--radius);font-size:13px;font-weight:500;color:var(--text2);cursor:pointer;transition:all .12s;border:none;background:none;width:100%;text-align:left}
+.nav-item:hover{background:var(--blue-lt);color:var(--wp-blue)}
+.nav-item.active{background:var(--wp-blue);color:#fff}
+.nav-item svg{width:16px;height:16px;flex-shrink:0}
+.nav-divider{border:none;border-top:1px solid var(--border);margin:8px 12px}
+
+/* ── MAIN ── */
+.main{flex:1;padding:24px;overflow-y:auto;min-width:0}
+.page{display:none}.page.active{display:block}
+.page-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px}
+.page-title{font-family:var(--font-cond);font-size:22px;font-weight:700;letter-spacing:0.3px;color:var(--text)}
+
+/* ── STATS ── */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin-bottom:22px}
+.stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px 16px;box-shadow:var(--shadow)}
+.stat-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--text3);margin-bottom:5px}
+.stat-val{font-family:var(--mono);font-size:24px;font-weight:500;letter-spacing:-1px}
+
+/* ── TOOLBAR ── */
+.toolbar{display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap}
+.search-box{position:relative;flex:1;min-width:180px}
+.search-box svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text3);width:15px;height:15px;pointer-events:none}
+.search-box input{width:100%;padding:9px 12px 9px 34px;border:1.5px solid var(--border);border-radius:var(--radius);font-family:var(--font);font-size:13px;background:#fff;outline:none}
+.search-box input:focus{border-color:var(--wp-blue)}
+.filter-sel{padding:9px 12px;border:1.5px solid var(--border);border-radius:var(--radius);font-family:var(--font);font-size:13px;background:#fff;color:var(--text);outline:none;cursor:pointer}
+
+/* ── TABLE ── */
+.table-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;box-shadow:var(--shadow)}
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{width:100%;border-collapse:collapse;min-width:900px}
+thead tr{background:var(--surface2)}
+th{text-align:left;padding:10px 14px;font-family:var(--font-cond);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--text2);border-bottom:1.5px solid var(--border);white-space:nowrap}
+td{padding:10px 14px;border-bottom:1px solid var(--border);font-size:13px;vertical-align:middle}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover td{background:#FAFBFF}
+td.mono{font-family:var(--mono);font-size:12px;color:var(--text3)}
+td.truncate{max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tfoot-bar{padding:10px 16px;border-top:1px solid var(--border);font-size:12px;color:var(--text3);background:var(--surface2);display:flex;align-items:center;justify-content:space-between}
+
+/* ── BADGES ── */
+.badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:20px;font-family:var(--font-cond);font-size:11px;font-weight:700;letter-spacing:.3px;text-transform:uppercase;white-space:nowrap}
+.b-saida{background:#FEE2E2;color:#991B1B}
+.b-retorno{background:var(--green-lt);color:var(--green)}
+.b-manutencao{background:var(--amber-lt);color:var(--amber)}
+.b-extraviado{background:#F3F4F6;color:#374151}
+.b-cancelado{background:var(--gray-lt);color:var(--text2)}
+.b-admin{background:#EDE9FE;color:#5B21B6}
+.b-lider{background:var(--amber-lt);color:var(--amber)}
+.b-usuario{background:var(--blue-lt);color:var(--wp-blue)}
+.b-ok{background:var(--green-lt);color:var(--green)}
+.b-avariado{background:var(--red-lt);color:var(--red)}
+.b-pendente{background:var(--amber-lt);color:var(--amber)}
+
+/* ── ICON BUTTONS ── */
+.actions{display:flex;gap:3px}
+.icon-btn{width:28px;height:28px;border:none;background:transparent;border-radius:var(--radius);cursor:pointer;color:var(--text2);display:inline-flex;align-items:center;justify-content:center;transition:all .12s}
+.icon-btn:hover{background:var(--blue-lt);color:var(--wp-blue)}
+.icon-btn.del:hover{background:var(--red-lt);color:var(--red)}
+
+/* ── EMPTY & LOADING ── */
+.empty{text-align:center;padding:48px;color:var(--text3)}
+.loading-row{text-align:center;padding:40px;color:var(--text3);font-size:13px;display:flex;align-items:center;justify-content:center;gap:10px}
+
+/* ── MODAL ── */
+.modal-bg{position:fixed;inset:0;background:rgba(17,24,39,.55);display:none;align-items:center;justify-content:center;z-index:300;padding:20px;backdrop-filter:blur(3px)}
+.modal-bg.open{display:flex}
+.modal{background:#fff;border-radius:var(--radius-xl);width:100%;max-width:620px;max-height:92vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.2)}
+.modal-wide{max-width:760px}
+.modal-head{display:flex;align-items:center;justify-content:space-between;padding:18px 22px;border-bottom:1px solid var(--border);position:sticky;top:0;background:#fff;z-index:1}
+.modal-head h3{font-family:var(--font-cond);font-size:17px;font-weight:700;letter-spacing:.3px}
+.modal-body{padding:22px}
+.modal-foot{display:flex;justify-content:flex-end;gap:8px;padding:14px 22px;border-top:1px solid var(--border);background:var(--surface2);border-radius:0 0 var(--radius-xl) var(--radius-xl)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:0 16px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:0 14px}
+
+/* ── SEÇÃO CARD ── */
+.section-card{border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px;margin-bottom:14px;background:var(--surface2)}
+.section-card-title{font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--text2);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.section-card-title svg{width:14px;height:14px;opacity:.6}
+
+/* ── FOTO PERFIL ── */
+.photo-wrap{display:flex;align-items:center;gap:16px;margin-bottom:16px}
+.photo-circle{width:72px;height:72px;border-radius:50%;background:var(--blue-lt);border:2px solid var(--border2);overflow:hidden;display:flex;align-items:center;justify-content:center;font-family:var(--font-cond);font-size:22px;font-weight:700;color:var(--wp-blue);flex-shrink:0}
+.photo-circle img{width:100%;height:100%;object-fit:cover}
+
+/* ── TOAST ── */
+#toast{position:fixed;bottom:24px;right:24px;background:#1F2937;color:#fff;padding:12px 18px;border-radius:var(--radius-lg);font-size:13px;z-index:999;opacity:0;transform:translateY(8px);transition:all .2s;pointer-events:none;max-width:320px;box-shadow:var(--shadow-md)}
+#toast.show{opacity:1;transform:translateY(0)}
+#toast.ok{background:#166534}
+#toast.err{background:#991B1B}
+
+/* ── AVATAR TABLE ── */
+.t-avatar{width:28px;height:28px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-family:var(--font-cond);font-size:10px;font-weight:700;overflow:hidden;background:var(--blue-lt);color:var(--wp-blue);vertical-align:middle;margin-right:6px}
+
+/* ── ADMIN CARDS ── */
+.admin-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;margin-bottom:22px}
+.admin-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:18px;box-shadow:var(--shadow);cursor:pointer;transition:all .15s}
+.admin-card:hover{border-color:var(--wp-blue);box-shadow:0 4px 16px rgba(27,47,166,.12)}
+.admin-card .ac-icon{width:40px;height:40px;border-radius:var(--radius);background:var(--blue-lt);display:flex;align-items:center;justify-content:center;margin-bottom:10px}
+.admin-card h4{font-family:var(--font-cond);font-size:14px;font-weight:700;margin-bottom:3px}
+.admin-card p{font-size:12px;color:var(--text2)}
+
+/* ── HAMBURGUER ── */
+#menuToggle{display:none;background:none;border:none;cursor:pointer;padding:6px;color:#fff}
+#sidebarOverlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:149}
+#sidebarOverlay.open{display:block}
+
+/* ── RESPONSIVO ── */
+@media(max-width:768px){
+  .topbar{padding:0 14px;height:54px}
+  .uname,.urole{display:none}
+  #menuToggle{display:flex;align-items:center;justify-content:center}
+  .sidebar{position:fixed;left:-240px;top:54px;height:calc(100vh - 54px);width:220px;z-index:150;transition:left .25s ease;box-shadow:4px 0 20px rgba(0,0,0,0.15)}
+  .sidebar.open{left:0}
+  .main{padding:14px}
+  .stats-grid{grid-template-columns:1fr 1fr;gap:10px}
+  .stat-val{font-size:20px}
+  .toolbar{flex-direction:column;align-items:stretch}
+  .filter-sel{width:100%}
+  .page-header{flex-direction:column;align-items:flex-start}
+  .modal-bg{padding:0;align-items:flex-end}
+  .modal{max-width:100%;border-radius:var(--radius-xl) var(--radius-xl) 0 0;max-height:92vh}
+  .grid2,.grid3{grid-template-columns:1fr}
+  #toast{left:14px;right:14px;bottom:16px;max-width:none}
+}
+@media(max-width:400px){
+  .stats-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- ══════ LOGIN ══════ -->
+<div id="loginScreen">
+  <div class="login-box">
+    <div class="login-logo-wrap">
+      <img id="loginLogo" src="" alt="" onerror="this.style.display='none'">
+      <div class="txt-logo">WORLD POST</div>
+    </div>
+    <div class="login-card">
+      <h2>Controle de Equipamentos</h2>
+      <p>Acesse com suas credenciais corporativas</p>
+      <div class="tabs">
+        <button class="tab active" onclick="switchTab('login')">Entrar</button>
+        <button class="tab" onclick="switchTab('signup')">Novo Usuário</button>
+      </div>
+      <!-- Login -->
+      <div id="loginForm">
+        <div id="loginErr" class="msg-err"></div>
+        <div class="form-field"><label>E-mail</label><input type="email" id="lEmail" placeholder="seu@email.com" onkeydown="if(event.key==='Enter')doLogin()"></div>
+        <div class="form-field">
+          <label>Senha</label>
+          <div style="position:relative">
+            <input type="password" id="lPass" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()" style="padding-right:40px">
+            <button type="button" onclick="togglePass('lPass')" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--text3)">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+          </div>
+        </div>
+        <button class="btn btn-primary btn-full" id="loginBtn" onclick="doLogin()">Entrar</button>
+      </div>
+      <!-- Signup -->
+      <div id="signupForm" style="display:none">
+        <div id="signupErr" class="msg-err"></div>
+        <div id="signupOk" class="msg-ok"></div>
+        <p style="font-size:12px;color:var(--text2);margin-bottom:14px">Novos usuários entram como <strong>Usuário</strong>. Um administrador pode alterar o perfil.</p>
+        <div class="form-field"><label>Nome Completo</label><input type="text" id="sNome" placeholder="Seu nome completo"></div>
+        <div class="form-field"><label>E-mail</label><input type="email" id="sEmail" placeholder="seu@email.com"></div>
+        <div class="form-field"><label>Senha</label><input type="password" id="sPass" placeholder="Mínimo 6 caracteres"></div>
+        <button class="btn btn-primary btn-full" id="signupBtn" onclick="doSignup()">Criar Conta</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════ APP ══════ -->
+<div id="appScreen">
+  <div id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="topbar-left">
+      <button id="menuToggle" onclick="toggleSidebar()">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+      <img id="appLogo" src="" alt="" style="height:32px;filter:brightness(0) invert(1)" onerror="this.style.display='none'">
+      <span class="topbar-logo-txt" id="appLogoFallback">WORLD POST</span>
+    </div>
+    <div class="topbar-right">
+      <div class="user-pill" onclick="openSelfProfile()">
+        <div class="uavatar" id="topAvatar"></div>
+        <div>
+          <div class="uname" id="topName"></div>
+          <div class="urole" id="topRole"></div>
+        </div>
+      </div>
+      <button class="btn btn-sm" style="color:#fff;border-color:rgba(255,255,255,.3);background:rgba(255,255,255,.1)" onclick="doLogout()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        Sair
+      </button>
+    </div>
+  </div>
+
+  <div class="layout">
+    <!-- SIDEBAR -->
+    <nav class="sidebar">
+      <div class="nav-section">
+        <div class="nav-label">Principal</div>
+        <button class="nav-item" onclick="goPage('dashboard')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+          Dashboard
+        </button>
+        <button class="nav-item active" onclick="goPage('registros')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          Registros
+        </button>
+      </div>
+      <hr class="nav-divider" id="adminDivider" style="display:none">
+      <div class="nav-section" id="adminNav" style="display:none">
+        <div class="nav-label">Administração</div>
+        <button class="nav-item" onclick="goPage('usuarios')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+          Usuários
+        </button>
+      </div>
+    </nav>
+
+    <!-- MAIN -->
+    <div class="main">
+
+      <!-- ── DASHBOARD ── -->
+      <div class="page" id="page-dashboard">
+        <div class="page-header">
+          <div class="page-title">Dashboard</div>
+        </div>
+        <div class="stats-grid" style="margin-bottom:20px">
+          <div class="stat"><div class="stat-label">Total de Registros</div><div class="stat-val" id="dsTotal">—</div></div>
+          <div class="stat"><div class="stat-label">Em Campo</div><div class="stat-val" id="dsSaida" style="color:var(--red)">—</div></div>
+          <div class="stat"><div class="stat-label">Retornados</div><div class="stat-val" id="dsRetorno" style="color:var(--green)">—</div></div>
+          <div class="stat"><div class="stat-label">Em Manutenção</div><div class="stat-val" id="dsManutencao" style="color:var(--amber)">—</div></div>
+          <div class="stat"><div class="stat-label">Extraviados</div><div class="stat-val" id="dsExtraviado" style="color:var(--red)">—</div></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">
+          <div class="table-card" style="padding:20px">
+            <div style="font-weight:600;font-size:13px;margin-bottom:14px;color:var(--text)">Registros por Status</div>
+            <div id="dsChartStatus"></div>
+          </div>
+          <div class="table-card" style="padding:20px">
+            <div style="font-weight:600;font-size:13px;margin-bottom:14px;color:var(--text)">Condição na Saída</div>
+            <div id="dsChartCondicao"></div>
+          </div>
+        </div>
+        <div class="table-card" style="padding:20px">
+          <div style="font-weight:600;font-size:13px;margin-bottom:14px;color:var(--text)">Top 5 Prestadores de Serviço</div>
+          <div id="dsChartPrestador"></div>
+        </div>
+      </div>
+
+      <!-- ── REGISTROS ── -->
+      <div class="page active" id="page-registros">
+        <div class="page-header">
+          <div class="page-title">Registros de Equipamentos</div>
+          <div style="display:flex;gap:8px">
+            <button class="btn" onclick="exportExcel()">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Exportar Excel
+            </button>
+            <button class="btn btn-primary" onclick="openRegistroModal()">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Novo Registro
+            </button>
+          </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="stats-grid">
+          <div class="stat"><div class="stat-label">Total</div><div class="stat-val" id="sTotal">—</div></div>
+          <div class="stat"><div class="stat-label">Em Campo</div><div class="stat-val" id="sSaida" style="color:var(--red)">—</div></div>
+          <div class="stat"><div class="stat-label">Retornados</div><div class="stat-val" id="sRetorno" style="color:var(--green)">—</div></div>
+          <div class="stat"><div class="stat-label">Manutenção</div><div class="stat-val" id="sManutencao" style="color:var(--amber)">—</div></div>
+          <div class="stat"><div class="stat-label">Extraviados</div><div class="stat-val" id="sExtraviado" style="color:var(--red)">—</div></div>
+        </div>
+
+        <!-- Toolbar -->
+        <div class="toolbar">
+          <div class="search-box">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" id="searchInput" placeholder="Buscar por responsável, prestador, NF, pedido..." oninput="renderRegistros()">
+          </div>
+          <select class="filter-sel" id="fStatus" onchange="renderRegistros()">
+            <option value="">Todos os status</option>
+            <option>Em Campo</option>
+            <option>Retornado</option>
+            <option>Em Manutenção</option>
+            <option>Extraviado</option>
+            <option>Cancelado</option>
+          </select>
+          <button class="btn btn-sm" onclick="loadRegistros()" title="Atualizar">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>
+          </button>
+        </div>
+
+        <!-- Tabela -->
+        <div class="table-card">
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Saída</th>
+                  <th>Resp. Saída</th>
+                  <th>Prestador</th>
+                  <th>Cond. Saída</th>
+                  <th>Acomp. Expedição</th>
+                  <th>Retorno</th>
+                  <th>Resp. Retorno</th>
+                  <th>Cond. Retorno</th>
+                  <th>Acomp. Recebimento</th>
+                  <th>NF</th>
+                  <th>Pedido</th>
+                  <th>Status</th>
+                  <th>Ações</th>
+                </tr>
+              </thead>
+              <tbody id="tbRegistros"></tbody>
+            </table>
+            <div id="emptyRegistros" class="empty" style="display:none">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              <p>Nenhum registro encontrado</p>
+            </div>
+            <div id="loadingRegistros" class="loading-row"><span class="spin spin-dark"></span> Carregando...</div>
+          </div>
+          <div class="tfoot-bar"><span id="footerReg">—</span></div>
+        </div>
+      </div>
+
+      <!-- ── USUÁRIOS ── -->
+      <div class="page" id="page-usuarios">
+        <div class="page-header">
+          <div class="page-title">Usuários</div>
+        </div>
+        <div class="admin-cards" id="adminCards"></div>
+        <div class="table-card">
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Usuário</th><th>E-mail</th><th>Matrícula</th><th>Turno</th><th>Nível</th><th>Ações</th></tr></thead>
+              <tbody id="tbUsers"></tbody>
+            </table>
+            <div id="emptyUsers" class="empty" style="display:none"><p>Nenhum usuário</p></div>
+            <div id="loadingUsers" class="loading-row"><span class="spin spin-dark"></span> Carregando...</div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /main -->
+  </div><!-- /layout -->
+</div><!-- /appScreen -->
+
+<!-- ══════ MODAL — REGISTRO ══════ -->
+<div class="modal-bg" id="mRegistro">
+  <div class="modal modal-wide">
+    <div class="modal-head">
+      <h3 id="mRegistroTitle">Novo Registro</h3>
+      <button class="icon-btn" onclick="closeModal('mRegistro')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="rEditId">
+      <div id="mRegErr" class="msg-err"></div>
+
+      <!-- SAÍDA -->
+      <div class="section-card">
+        <div class="section-card-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 8 16 12 12 16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+          Dados de Saída
+        </div>
+        <div class="grid2">
+          <div class="form-field"><label>Data de Saída</label><input type="date" id="rDataSaida"></div>
+          <div class="form-field"><label>Responsável na Saída</label><input type="text" id="rRespSaida" placeholder="Nome do responsável"></div>
+        </div>
+        <div class="grid2">
+          <div class="form-field"><label>Prestador de Serviço</label><input type="text" id="rPrestador" placeholder="Nome do prestador ou empresa"></div>
+          <div class="form-field"><label>Condições do Equipamento (Saída)</label>
+            <select id="rCondicaoSaida">
+              <option value="">Selecione</option>
+              <option>Bom estado</option>
+              <option>Com avarias</option>
+              <option>Necessita revisão</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-field"><label>Observação sobre condição (saída)</label><textarea id="rObsSaida" placeholder="Descreva detalhes das condições, avarias ou observações..."></textarea></div>
+        <div class="form-field"><label>Acompanhante Envio (Expedição)</label><input type="text" id="rAcompExpedicao" placeholder="Nome do acompanhante na expedição"></div>
+      </div>
+
+      <!-- RETORNO -->
+      <div class="section-card">
+        <div class="section-card-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 16 8 12 12 8"/><line x1="16" y1="12" x2="8" y2="12"/></svg>
+          Dados de Retorno
+        </div>
+        <div class="grid2">
+          <div class="form-field"><label>Data de Retorno</label><input type="date" id="rDataRetorno"></div>
+          <div class="form-field"><label>Responsável no Retorno</label><input type="text" id="rRespRetorno" placeholder="Nome do responsável"></div>
+        </div>
+        <div class="grid2">
+          <div class="form-field"><label>Condições do Equipamento (Retorno)</label>
+            <select id="rCondicaoRetorno">
+              <option value="">Selecione</option>
+              <option>Bom estado</option>
+              <option>Com avarias</option>
+              <option>Necessita revisão</option>
+            </select>
+          </div>
+          <div class="form-field"><label>Acompanhante Recebimento</label><input type="text" id="rAcompRecebimento" placeholder="Nome do acompanhante no recebimento"></div>
+        </div>
+        <div class="form-field"><label>Observação sobre condição (retorno)</label><textarea id="rObsRetorno" placeholder="Descreva detalhes das condições, avarias ou observações..."></textarea></div>
+      </div>
+
+      <!-- DOCUMENTOS -->
+      <div class="section-card">
+        <div class="section-card-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          Documentos e Status
+        </div>
+        <div class="grid3">
+          <div class="form-field"><label>Nota Fiscal (NF)</label><input type="text" id="rNF" placeholder="Número da NF"></div>
+          <div class="form-field"><label>Número do Pedido</label><input type="text" id="rPedido" placeholder="Número do pedido"></div>
+          <div class="form-field" id="rStatusField"><label>Status</label>
+            <select id="rStatus">
+              <option>Em Campo</option>
+              <option>Retornado</option>
+              <option>Em Manutenção</option>
+              <option>Extraviado</option>
+              <option>Cancelado</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- ANEXOS -->
+      <div class="form-field">
+        <label>Anexos <span style="font-size:11px;color:var(--text3);font-weight:400">(laudos, fotos do equipamento, NF...)</span></label>
+        <div class="file-drop" id="fileDrop" onclick="document.getElementById('fileInput').click()" ondragover="ev.preventDefault();this.style.borderColor='var(--wp-blue)'" ondragleave="this.style.borderColor=''" ondrop="handleDrop(event)" style="border:2px dashed var(--border2);border-radius:var(--radius-lg);padding:20px;text-align:center;cursor:pointer;background:var(--surface2)">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin:0 auto;color:var(--text3)"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          <p style="font-size:13px;color:var(--text2);margin-top:8px">Clique ou arraste arquivos aqui</p>
+          <p style="font-size:11px;color:var(--text3);margin-top:2px">PDF, imagens, documentos — máx. 10MB cada</p>
+        </div>
+        <input type="file" id="fileInput" multiple style="display:none" onchange="handleFileSelect(event)">
+        <div class="file-list" id="newFileList" style="margin-top:8px;display:flex;flex-direction:column;gap:6px"></div>
+        <div class="file-list" id="existingFileList" style="margin-top:8px;display:flex;flex-direction:column;gap:6px"></div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" onclick="closeModal('mRegistro')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveRegistro()" id="savRegBtn">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+        Salvar
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════ MODAL — USUÁRIO ══════ -->
+<div class="modal-bg" id="mUser">
+  <div class="modal">
+    <div class="modal-head">
+      <h3 id="mUserTitle">Editar Usuário</h3>
+      <button class="icon-btn" onclick="closeModal('mUser')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="uEditId">
+      <div id="mUserErr" class="msg-err"></div>
+      <div id="mUserOk" class="msg-ok"></div>
+      <div class="photo-wrap">
+        <div class="photo-circle" id="uPhotoPreview"></div>
+        <div>
+          <button class="btn btn-sm" onclick="document.getElementById('uPhotoInput').click()">Alterar foto</button>
+          <p style="font-size:11px;color:var(--text3);margin-top:4px">JPG ou PNG, máx. 2MB</p>
+          <input type="file" id="uPhotoInput" accept="image/*" style="display:none" onchange="previewUserPhoto(event)">
+        </div>
+      </div>
+      <div class="grid2">
+        <div class="form-field"><label>Nome completo</label><input type="text" id="uNome" placeholder="Nome completo"></div>
+        <div class="form-field"><label>E-mail</label><input type="email" id="uEmail"></div>
+      </div>
+      <div class="grid2">
+        <div class="form-field"><label>Matrícula</label><input type="text" id="uMatricula" placeholder="Ex: WP-0042"></div>
+        <div class="form-field"><label>Turno</label>
+          <select id="uTurno"><option value="">Selecione</option><option>1º Turno</option><option>2º Turno</option><option>Comercial</option></select>
+        </div>
+      </div>
+      <div class="form-field"><label>Cargo / Nível de Acesso</label>
+        <select id="uRole">
+          <option value="usuario">Usuário — Apenas cadastrar</option>
+          <option value="lider">Líder — Cadastrar + editar + status</option>
+          <option value="admin">Administrador — Acesso total</option>
+        </select>
+      </div>
+      <div style="border-top:1px solid var(--border);padding-top:14px;margin-top:4px">
+        <p style="font-size:12px;color:var(--text2);margin-bottom:10px">Redefinir senha:</p>
+        <div class="grid2">
+          <div class="form-field"><label>Nova Senha</label><input type="password" id="uNewPass" placeholder="Mínimo 6 caracteres"></div>
+          <div class="form-field" style="display:flex;align-items:flex-end">
+            <button class="btn btn-sm" style="width:100%" onclick="resetUserPassword()">Redefinir</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" onclick="closeModal('mUser')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveUser()" id="savUserBtn">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+<script>
+/* ══════════════════════════════════════════════
+   CONFIG SUPABASE — substitua pelas suas credenciais
+══════════════════════════════════════════════ */
+const SUPABASE_URL = 'https://viqezviwijbauuibcjqf.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZpcWV6dml3aWpiYXV1aWJjanFmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA5MDczMjMsImV4cCI6MjA5NjQ4MzMyM30.0dxM31DPkvtw5sNKbvd3JrkAbR5tNb89ppbOgJBg9jE';
+const { createClient } = supabase;
+const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+/* ══════════════════════════════════════════════
+   LOGO — substitua pela URL da sua logo
+══════════════════════════════════════════════ */
+function setupLogo(){
+  const logoSrc = ''; // ► Cole aqui a URL da sua logo
+  if(logoSrc){
+    const l1=$('loginLogo'), l2=$('appLogo');
+    if(l1) l1.src=logoSrc;
+    if(l2){ l2.src=logoSrc; $('appLogoFallback').style.display='none'; }
+  }
+}
+
+/* ══════════════════════════════════════════════
+   STATE
+══════════════════════════════════════════════ */
+let currentUser=null, currentProfile=null;
+let allRegistros=[], allUsers=[];
+let pendingFiles=[], editingUserId=null, newPhotoFile=null;
+let currentPage='registros';
+
+/* ══════════════════════════════════════════════
+   UTILITÁRIOS
+══════════════════════════════════════════════ */
+const $=id=>document.getElementById(id);
+const v=id=>($( id)?.value||'').trim();
+const esc=s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+function showEl(el,msg){el.textContent=msg;el.style.display='block'}
+function setBtnLoading(btn,txt){btn.disabled=true;btn.innerHTML=`<span class="spin"></span>${txt}`}
+function resetBtn(btn,txt){btn.disabled=false;btn.textContent=txt}
+function openModal(id){$(id).classList.add('open')}
+function closeModal(id){$(id).classList.remove('open')}
+function togglePass(id){const el=$(id);el.type=el.type==='password'?'text':'password'}
+function toast(msg,type=''){
+  const t=$('toast'); t.textContent=msg; t.className='show '+(type==='ok'?'ok':type==='err'?'err':'');
+  setTimeout(()=>t.className='',2800);
+}
+function fmtDate(d){ if(!d) return '—'; const [y,m,day]=d.split('-'); return `${day}/${m}/${y}`; }
+
+const iconEdit=`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`;
+const iconTrash=`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>`;
+const iconEye=`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`;
+
+/* ══════════════════════════════════════════════
+   AUTH
+══════════════════════════════════════════════ */
+function switchTab(tab){
+  $('loginForm').style.display=tab==='login'?'':'none';
+  $('signupForm').style.display=tab==='signup'?'':'none';
+  document.querySelectorAll('.tab').forEach((t,i)=>
+    t.classList.toggle('active',(i===0&&tab==='login')||(i===1&&tab==='signup'))
+  );
+}
+
+let _loginInProgress=false;
+async function doLogin(){
+  if(_loginInProgress) return;
+  const email=v('lEmail'), pass=v('lPass');
+  const err=$('loginErr'), btn=$('loginBtn');
+  err.style.display='none';
+  if(!email||!pass){showEl(err,'Preencha e-mail e senha.');return;}
+  _loginInProgress=true;
+  setBtnLoading(btn,'Entrando...');
+  try{
+    const {error}=await sb.auth.signInWithPassword({email,password:pass});
+    if(error){
+      const msg=error.message?.includes('Invalid')||error.message?.includes('invalid_credentials')
+        ?'E-mail ou senha incorretos.'
+        :'Erro: '+error.message;
+      showEl(err,msg); resetBtn(btn,'Entrar'); _loginInProgress=false;
+    }
+  }catch(e){showEl(err,'Erro inesperado.');resetBtn(btn,'Entrar');_loginInProgress=false;}
+}
+
+async function doSignup(){
+  const nome=v('sNome'),email=v('sEmail'),pass=v('sPass');
+  const err=$('signupErr'),ok=$('signupOk'),btn=$('signupBtn');
+  err.style.display='none';ok.style.display='none';
+  if(!nome||!email||!pass){showEl(err,'Preencha todos os campos.');return;}
+  if(pass.length<6){showEl(err,'Senha deve ter ao menos 6 caracteres.');return;}
+  setBtnLoading(btn,'Cadastrando...');
+  const {error}=await sb.auth.signUp({email,password:pass,options:{data:{nome,role:'usuario'}}});
+  resetBtn(btn,'Criar Conta');
+  if(error){showEl(err,error.message);return;}
+  showEl(ok,'Conta criada! Faça login para entrar.');
+  switchTab('login');
+}
+
+async function doLogout(){await sb.auth.signOut();}
+
+document.addEventListener('DOMContentLoaded',()=>{
+  sb.auth.onAuthStateChange(async(event,session)=>{
+    if(session?.user){
+      currentUser=session.user;
+      await loadProfile();
+      setupApp();
+      await loadRegistros();
+    } else {
+      currentUser=null;currentProfile=null;
+      const ls=$('loginScreen');if(ls)ls.style.display='flex';
+      const as=$('appScreen');if(as)as.style.display='none';
+      const btn=$('loginBtn');if(btn)resetBtn(btn,'Entrar');
+      _loginInProgress=false;
+    }
+  });
+});
+
+async function loadProfile(){
+  try{
+    const {data}=await sb.from('profiles').select('*').eq('id',currentUser.id).maybeSingle();
+    currentProfile=data;
+    if(!data){
+      await sb.from('profiles').insert({
+        id:currentUser.id,
+        nome:currentUser.user_metadata?.nome||currentUser.email.split('@')[0],
+        email:currentUser.email,role:'usuario'
+      });
+      const {data:d2}=await sb.from('profiles').select('*').eq('id',currentUser.id).maybeSingle();
+      currentProfile=d2;
+    }
+  }catch(e){
+    currentProfile={id:currentUser.id,nome:currentUser.email.split('@')[0],email:currentUser.email,role:'usuario'};
+  }
+}
+
+/* ══════════════════════════════════════════════
+   SETUP APP
+══════════════════════════════════════════════ */
+function setupApp(){
+  $('loginScreen').style.display='none';
+  $('appScreen').style.display='block';
+  const p=currentProfile;
+  const roleMap={admin:'Administrador',lider:'Líder',usuario:'Usuário'};
+  $('topName').textContent=p?.nome||'Usuário';
+  $('topRole').textContent=roleMap[p?.role]||'Usuário';
+  const av=$('topAvatar');
+  if(p?.foto_url) av.innerHTML=`<img src="${p.foto_url}" alt="">`;
+  else av.textContent=(p?.nome||'U').slice(0,2).toUpperCase();
+  const isAdmin=p?.role==='admin';
+  $('adminNav').style.display=isAdmin?'':'none';
+  $('adminDivider').style.display=isAdmin?'':'none';
+  setupLogo();
+}
+
+/* ══════════════════════════════════════════════
+   NAVEGAÇÃO
+══════════════════════════════════════════════ */
+function toggleSidebar(){
+  document.querySelector('.sidebar').classList.toggle('open');
+  $('sidebarOverlay').classList.toggle('open');
+}
+
+function goPage(page){
+  currentPage=page;
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  $('page-'+page)?.classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n=>{
+    if(n.textContent.toLowerCase().includes(page.slice(0,4))) n.classList.add('active');
+  });
+  if(page==='usuarios') loadUsers();
+  if(page==='dashboard') renderDashboard();
+  document.querySelector('.sidebar').classList.remove('open');
+  $('sidebarOverlay').classList.remove('open');
+}
+
+/* ══════════════════════════════════════════════
+   DASHBOARD
+══════════════════════════════════════════════ */
+function renderDashboard(){
+  const total=allRegistros.length;
+  const saida=allRegistros.filter(r=>r.status==='Em Campo').length;
+  const retorno=allRegistros.filter(r=>r.status==='Retornado').length;
+  const manut=allRegistros.filter(r=>r.status==='Em Manutenção').length;
+  const extrav=allRegistros.filter(r=>r.status==='Extraviado').length;
+  $('dsTotal').textContent=total;$('dsSaida').textContent=saida;
+  $('dsRetorno').textContent=retorno;$('dsManutencao').textContent=manut;$('dsExtraviado').textContent=extrav;
+
+  function barChart(cid,items,colorMap){
+    const el=$(cid);if(!el)return;
+    const max=Math.max(...items.map(i=>i.v),1);
+    el.innerHTML=items.length?items.map(i=>{
+      const pct=Math.round((i.v/max)*100);
+      return `<div style="margin-bottom:10px">
+        <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">
+          <span style="color:var(--text2)">${i.k}</span><strong>${i.v}</strong>
+        </div>
+        <div style="background:var(--border);border-radius:4px;height:8px;overflow:hidden">
+          <div style="width:${pct}%;height:100%;background:${colorMap[i.k]||'var(--wp-blue)'};border-radius:4px;transition:width .4s"></div>
+        </div></div>`;
+    }).join(''):'<p style="color:var(--text3);font-size:13px">Sem dados</p>';
+  }
+
+  const statusColors={'Em Campo':'var(--red)','Retornado':'var(--green)','Em Manutenção':'var(--amber)','Extraviado':'#374151','Cancelado':'var(--gray-lt)'};
+  const condColors={'Bom estado':'var(--green)','Com avarias':'var(--red)','Necessita revisão':'var(--amber)'};
+
+  barChart('dsChartStatus',['Em Campo','Retornado','Em Manutenção','Extraviado','Cancelado'].map(k=>({k,v:allRegistros.filter(r=>r.status===k).length})).filter(i=>i.v>0),statusColors);
+  barChart('dsChartCondicao',['Bom estado','Com avarias','Necessita revisão'].map(k=>({k,v:allRegistros.filter(r=>r.condicao_saida===k).length})).filter(i=>i.v>0),condColors);
+
+  const pCount={};
+  allRegistros.forEach(r=>{const n=r.prestador||'Não informado';pCount[n]=(pCount[n]||0)+1;});
+  const pItems=Object.entries(pCount).map(([k,v])=>({k,v})).sort((a,b)=>b.v-a.v).slice(0,5);
+  barChart('dsChartPrestador',pItems,{});
+}
+
+/* ══════════════════════════════════════════════
+   REGISTROS — LOAD / RENDER
+══════════════════════════════════════════════ */
+async function loadRegistros(){
+  $('loadingRegistros').style.display='flex';
+  $('emptyRegistros').style.display='none';
+  $('tbRegistros').innerHTML='';
+  const {data,error}=await sb.from('registros').select('*, anexos(id,nome_arquivo,url)').order('id',{ascending:false});
+  $('loadingRegistros').style.display='none';
+  if(error){toast('Erro ao carregar: '+error.message,'err');return;}
+  allRegistros=data||[];
+  updateStats();
+  renderRegistros();
+}
+
+function updateStats(){
+  $('sTotal').textContent=allRegistros.length;
+  $('sSaida').textContent=allRegistros.filter(r=>r.status==='Em Campo').length;
+  $('sRetorno').textContent=allRegistros.filter(r=>r.status==='Retornado').length;
+  $('sManutencao').textContent=allRegistros.filter(r=>r.status==='Em Manutenção').length;
+  $('sExtraviado').textContent=allRegistros.filter(r=>r.status==='Extraviado').length;
+}
+
+const statusBadge={
+  'Em Campo':'b-saida','Retornado':'b-retorno',
+  'Em Manutenção':'b-manutencao','Extraviado':'b-extraviado','Cancelado':'b-cancelado'
+};
+const condBadge={'Bom estado':'b-ok','Com avarias':'b-avariado','Necessita revisão':'b-pendente'};
+
+function renderRegistros(){
+  const q=(v('searchInput')||'').toLowerCase();
+  const fs=v('fStatus');
+  const filtered=allRegistros.filter(r=>{
+    const txt=((r.resp_saida||'')+(r.prestador||'')+(r.nf||'')+(r.pedido||'')+(r.resp_retorno||'')+(r.acomp_expedicao||'')+(r.acomp_recebimento||'')).toLowerCase();
+    return(!q||txt.includes(q))&&(!fs||r.status===fs);
+  });
+  const tb=$('tbRegistros');
+  $('emptyRegistros').style.display=filtered.length?'none':'block';
+  $('footerReg').textContent=`${filtered.length} de ${allRegistros.length} registro${allRegistros.length!==1?'s':''}`;
+  const canEdit=currentProfile?.role==='lider'||currentProfile?.role==='admin';
+  const canDelete=currentProfile?.role==='admin';
+  tb.innerHTML=filtered.map(r=>`
+    <tr>
+      <td class="mono">#${r.id}</td>
+      <td>${fmtDate(r.data_saida)}</td>
+      <td>${esc(r.resp_saida||'—')}</td>
+      <td><strong>${esc(r.prestador||'—')}</strong></td>
+      <td>${r.condicao_saida?`<span class="badge ${condBadge[r.condicao_saida]||'b-pendente'}">${esc(r.condicao_saida)}</span>`:'—'}</td>
+      <td class="truncate">${esc(r.acomp_expedicao||'—')}</td>
+      <td>${fmtDate(r.data_retorno)}</td>
+      <td>${esc(r.resp_retorno||'—')}</td>
+      <td>${r.condicao_retorno?`<span class="badge ${condBadge[r.condicao_retorno]||'b-pendente'}">${esc(r.condicao_retorno)}</span>`:'—'}</td>
+      <td class="truncate">${esc(r.acomp_recebimento||'—')}</td>
+      <td class="mono">${esc(r.nf||'—')}</td>
+      <td class="mono">${esc(r.pedido||'—')}</td>
+      <td><span class="badge ${statusBadge[r.status]||'b-cancelado'}">${esc(r.status||'—')}</span></td>
+      <td><div class="actions">
+        ${canEdit?`<button class="icon-btn" title="Editar" onclick="editRegistro(${r.id})">${iconEdit}</button>`:''}
+        ${canDelete?`<button class="icon-btn del" title="Excluir" onclick="deleteRegistro(${r.id})">${iconTrash}</button>`:''}
+      </div></td>
+    </tr>
+  `).join('');
+}
+
+/* ══════════════════════════════════════════════
+   MODAL REGISTRO — ABRIR / SALVAR
+══════════════════════════════════════════════ */
+function openRegistroModal(r=null){
+  pendingFiles=[];
+  $('rEditId').value=r?.id||'';
+  $('mRegistroTitle').textContent=r?'Editar Registro':'Novo Registro';
+  $('mRegErr').style.display='none';
+  $('newFileList').innerHTML='';
+  $('existingFileList').innerHTML='';
+
+  $('rDataSaida').value=r?.data_saida||'';
+  $('rRespSaida').value=r?.resp_saida||'';
+  $('rPrestador').value=r?.prestador||'';
+  $('rCondicaoSaida').value=r?.condicao_saida||'';
+  $('rObsSaida').value=r?.obs_saida||'';
+  $('rAcompExpedicao').value=r?.acomp_expedicao||'';
+  $('rDataRetorno').value=r?.data_retorno||'';
+  $('rRespRetorno').value=r?.resp_retorno||'';
+  $('rCondicaoRetorno').value=r?.condicao_retorno||'';
+  $('rObsRetorno').value=r?.obs_retorno||'';
+  $('rAcompRecebimento').value=r?.acomp_recebimento||'';
+  $('rNF').value=r?.nf||'';
+  $('rPedido').value=r?.pedido||'';
+  $('rStatus').value=r?.status||'Em Campo';
+
+  const canStat=currentProfile?.role==='lider'||currentProfile?.role==='admin';
+  $('rStatusField').style.display=canStat?'':'none';
+
+  if(r?.anexos?.length) renderExistingFiles(r.anexos);
+  openModal('mRegistro');
+}
+
+function editRegistro(id){ const r=allRegistros.find(x=>x.id===id);if(r)openRegistroModal(r); }
+
+async function saveRegistro(){
+  const id=$('rEditId').value;
+  const errEl=$('mRegErr');
+  errEl.style.display='none';
+  const canStat=currentProfile?.role==='lider'||currentProfile?.role==='admin';
+
+  const payload={
+    data_saida:v('rDataSaida')||null,
+    resp_saida:v('rRespSaida')||null,
+    prestador:v('rPrestador')||null,
+    condicao_saida:v('rCondicaoSaida')||null,
+    obs_saida:v('rObsSaida')||null,
+    acomp_expedicao:v('rAcompExpedicao')||null,
+    data_retorno:v('rDataRetorno')||null,
+    resp_retorno:v('rRespRetorno')||null,
+    condicao_retorno:v('rCondicaoRetorno')||null,
+    obs_retorno:v('rObsRetorno')||null,
+    acomp_recebimento:v('rAcompRecebimento')||null,
+    nf:v('rNF')||null,
+    pedido:v('rPedido')||null,
+    status:canStat?v('rStatus'):'Em Campo',
+  };
+
+  if(!payload.data_saida){showEl(errEl,'A data de saída é obrigatória.');return;}
+  if(!payload.prestador){showEl(errEl,'O prestador de serviço é obrigatório.');return;}
+
+  const btn=$('savRegBtn'); setBtnLoading(btn,'Salvando...');
+
+  let registroId=id;
+  if(id){
+    const {error}=await sb.from('registros').update(payload).eq('id',id);
+    if(error){showEl(errEl,error.message);resetBtn(btn,'Salvar');return;}
+  } else {
+    payload.criado_por=currentUser.id;
+    const {data,error}=await sb.from('registros').insert(payload).select().single();
+    if(error){showEl(errEl,error.message);resetBtn(btn,'Salvar');return;}
+    registroId=data.id;
+  }
+
+  // Upload de anexos
+  if(pendingFiles.length){
+    for(const f of pendingFiles){
+      const path=`registros/${registroId}/${Date.now()}_${f.name}`;
+      const {error:upErr}=await sb.storage.from('anexos').upload(path,f);
+      if(!upErr){
+        const {data:urlData}=sb.storage.from('anexos').getPublicUrl(path);
+        await sb.from('anexos').insert({registro_id:registroId,nome_arquivo:f.name,url:urlData.publicUrl,tipo:f.type,tamanho:f.size,criado_por:currentUser.id});
+      }
+    }
+  }
+
+  resetBtn(btn,'Salvar');
+  toast(id?'Registro atualizado!':'Registro criado!','ok');
+  closeModal('mRegistro');
+  await loadRegistros();
+}
+
+async function deleteRegistro(id){
+  if(!confirm('Excluir este registro?')) return;
+  await sb.from('anexos').delete().eq('registro_id',id);
+  const {error}=await sb.from('registros').delete().eq('id',id);
+  if(error){toast('Erro ao excluir: '+error.message,'err');return;}
+  toast('Registro excluído.','ok');
+  await loadRegistros();
+}
+
+/* ══════════════════════════════════════════════
+   ANEXOS
+══════════════════════════════════════════════ */
+function handleFileSelect(e){ addFiles(Array.from(e.target.files)); e.target.value=''; }
+function handleDrop(e){
+  e.preventDefault(); $('fileDrop').style.borderColor='';
+  addFiles(Array.from(e.dataTransfer.files));
+}
+function addFiles(files){
+  const ok=files.filter(f=>f.size<=10*1024*1024);
+  const big=files.filter(f=>f.size>10*1024*1024);
+  if(big.length) toast(`${big.length} arquivo(s) ignorado(s): tamanho > 10MB`,'err');
+  pendingFiles.push(...ok);
+  renderPendingFiles();
+}
+function renderPendingFiles(){
+  $('newFileList').innerHTML=pendingFiles.map((f,i)=>`
+    <div style="display:flex;align-items:center;justify-content:space-between;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:8px 12px;font-size:12px">
+      <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text)">${esc(f.name)}</span>
+      <button onclick="removePending(${i})" style="background:none;border:none;cursor:pointer;color:var(--red);margin-left:8px;flex-shrink:0">✕</button>
+    </div>`).join('');
+}
+function removePending(i){ pendingFiles.splice(i,1); renderPendingFiles(); }
+function renderExistingFiles(anexos){
+  $('existingFileList').innerHTML=anexos.map(a=>`
+    <div style="display:flex;align-items:center;justify-content:space-between;background:var(--blue-lt);border:1px solid var(--border);border-radius:var(--radius);padding:8px 12px;font-size:12px">
+      <a href="${esc(a.url)}" target="_blank" style="color:var(--wp-blue);text-decoration:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(a.nome_arquivo)}</a>
+    </div>`).join('');
+}
+
+/* ══════════════════════════════════════════════
+   EXPORTAR EXCEL
+══════════════════════════════════════════════ */
+function exportExcel(){
+  if(!allRegistros.length){toast('Sem dados para exportar','err');return;}
+  const rows=allRegistros.map(r=>({
+    'ID':r.id,
+    'Data de Saída':fmtDate(r.data_saida),
+    'Responsável Saída':r.resp_saida||'',
+    'Prestador de Serviço':r.prestador||'',
+    'Condição Saída':r.condicao_saida||'',
+    'Obs. Saída':r.obs_saida||'',
+    'Acomp. Expedição':r.acomp_expedicao||'',
+    'Data de Retorno':fmtDate(r.data_retorno),
+    'Responsável Retorno':r.resp_retorno||'',
+    'Condição Retorno':r.condicao_retorno||'',
+    'Obs. Retorno':r.obs_retorno||'',
+    'Acomp. Recebimento':r.acomp_recebimento||'',
+    'NF':r.nf||'',
+    'Pedido':r.pedido||'',
+    'Status':r.status||'',
+  }));
+  const ws=XLSX.utils.json_to_sheet(rows);
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'Registros');
+  XLSX.writeFile(wb,`equipamentos_${new Date().toISOString().slice(0,10)}.xlsx`);
+  toast('Excel exportado!','ok');
+}
+
+/* ══════════════════════════════════════════════
+   USUÁRIOS
+══════════════════════════════════════════════ */
+async function loadUsers(){
+  $('loadingUsers').style.display='flex';
+  const {data}=await sb.from('profiles').select('*').order('nome');
+  $('loadingUsers').style.display='none';
+  allUsers=data||[];
+  renderUsers();
+}
+
+function renderUsers(){
+  const tb=$('tbUsers');
+  $('emptyUsers').style.display=allUsers.length?'none':'block';
+  const roleBadge={admin:'b-admin',lider:'b-lider',usuario:'b-usuario'};
+  const roleLabel={admin:'Admin',lider:'Líder',usuario:'Usuário'};
+  tb.innerHTML=allUsers.map(u=>`
+    <tr>
+      <td><div class="t-avatar">${(u.nome||'U').slice(0,2).toUpperCase()}</div><strong>${esc(u.nome)}</strong></td>
+      <td>${esc(u.email||'—')}</td>
+      <td class="mono">${esc(u.matricula||'—')}</td>
+      <td>${esc(u.turno||'—')}</td>
+      <td><span class="badge ${roleBadge[u.role]||'b-usuario'}">${roleLabel[u.role]||'Usuário'}</span></td>
+      <td><button class="icon-btn" onclick="openUserModal('${u.id}')">${iconEdit}</button></td>
+    </tr>`).join('');
+
+  // Cards admin
+  $('adminCards').innerHTML=`
+    <div class="admin-card" onclick="loadUsers()">
+      <div class="ac-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--wp-blue)" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div>
+      <h4>${allUsers.length} Usuários</h4><p>Total cadastrado</p>
+    </div>
+    <div class="admin-card">
+      <div class="ac-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--wp-blue)" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></div>
+      <h4>${allUsers.filter(u=>u.role==='admin').length} Admins</h4><p>Acesso total</p>
+    </div>`;
+}
+
+function openUserModal(uid){
+  const u=allUsers.find(x=>x.id===uid);if(!u)return;
+  const isAdmin=currentProfile?.role==='admin';
+  const isSelf=uid===currentUser?.id;
+  if(!isAdmin&&!isSelf){toast('Sem permissão.','err');return;}
+  editingUserId=uid;newPhotoFile=null;
+  $('uEditId').value=uid;
+  $('uNome').value=u.nome||'';
+  $('uEmail').value=u.email||'';
+  $('uMatricula').value=u.matricula||'';
+  $('uTurno').value=u.turno||'';
+  $('uRole').value=u.role||'usuario';
+  $('uNewPass').value='';
+  $('mUserErr').style.display='none';$('mUserOk').style.display='none';
+  const rf=$('uRole'),rw=rf.closest('.form-field');
+  if(!isAdmin){rf.disabled=true;rw.style.opacity='.5';}
+  else{rf.disabled=false;rw.style.opacity='1';}
+  const ph=$('uPhotoPreview');
+  if(u.foto_url) ph.innerHTML=`<img src="${u.foto_url}" alt="" style="width:100%;height:100%;object-fit:cover">`;
+  else ph.textContent=(u.nome||'U').slice(0,2).toUpperCase();
+  openModal('mUser');
+}
+
+function openSelfProfile(){ if(currentUser) openUserModal(currentUser.id); }
+
+function previewUserPhoto(e){
+  const f=e.target.files[0];if(!f)return;
+  newPhotoFile=f;
+  const r=new FileReader();
+  r.onload=ev=>{ $('uPhotoPreview').innerHTML=`<img src="${ev.target.result}" style="width:100%;height:100%;object-fit:cover">`; };
+  r.readAsDataURL(f);
+}
+
+async function saveUser(){
+  const uid=$('uEditId').value;
+  const isAdmin=currentProfile?.role==='admin';
+  const orig=allUsers.find(x=>x.id===uid)?.role||'usuario';
+  let foto_url=allUsers.find(x=>x.id===uid)?.foto_url||null;
+  if(newPhotoFile){
+    const path=`avatars/${uid}_${Date.now()}`;
+    const {error:upErr}=await sb.storage.from('fotos').upload(path,newPhotoFile,{upsert:true});
+    if(!upErr){const {data:ud}=sb.storage.from('fotos').getPublicUrl(path);foto_url=ud.publicUrl;}
+  }
+  const payload={
+    nome:v('uNome'),email:v('uEmail')||null,
+    matricula:v('uMatricula')||null,turno:v('uTurno')||null,
+    role:isAdmin?v('uRole'):orig,foto_url
+  };
+  const btn=$('savUserBtn');setBtnLoading(btn,'Salvando...');
+  const {error}=await sb.from('profiles').update(payload).eq('id',uid);
+  resetBtn(btn,'Salvar');
+  if(error){showEl($('mUserErr'),error.message);return;}
+  showEl($('mUserOk'),'Salvo com sucesso!');
+  toast('Usuário atualizado!','ok');
+  await loadUsers();
+}
+
+async function resetUserPassword(){
+  const pass=$('uNewPass').value;
+  if(pass.length<6){toast('Senha deve ter ao menos 6 caracteres','err');return;}
+  const {error}=await sb.auth.admin.updateUserById($('uEditId').value,{password:pass});
+  if(error) toast('Erro: use o painel Supabase para redefinir senhas de outros usuários.','err');
+  else toast('Senha redefinida!','ok');
+}
+</script>
+</body>
+</html>
