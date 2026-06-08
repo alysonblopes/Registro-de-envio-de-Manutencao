@@ -186,7 +186,7 @@ td.truncate{max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ell
 #sidebarOverlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:149}
 #sidebarOverlay.open{display:block}
 
-/* ── RESPONSIVO ── */
+/* ── RESPONSIVO TABLET ── */
 @media(max-width:768px){
   .topbar{padding:0 14px;height:54px}
   .uname,.urole{display:none}
@@ -199,13 +199,87 @@ td.truncate{max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ell
   .toolbar{flex-direction:column;align-items:stretch}
   .filter-sel{width:100%}
   .page-header{flex-direction:column;align-items:flex-start}
+  /* Bottom sheet modal */
   .modal-bg{padding:0;align-items:flex-end}
-  .modal{max-width:100%;border-radius:var(--radius-xl) var(--radius-xl) 0 0;max-height:92vh}
+  .modal{
+    max-width:100%;border-radius:20px 20px 0 0;
+    max-height:93vh;
+    animation:slideUp .25s ease;
+  }
+  @keyframes slideUp{from{transform:translateY(60px);opacity:.6}to{transform:translateY(0);opacity:1}}
+  .modal-head{border-radius:20px 20px 0 0;padding:14px 18px}
+  /* drag handle visual */
+  .modal-head::before{
+    content:'';display:block;width:40px;height:4px;
+    background:var(--border2);border-radius:4px;
+    margin:0 auto 10px;
+  }
   .grid2,.grid3{grid-template-columns:1fr}
   #toast{left:14px;right:14px;bottom:16px;max-width:none}
+  /* Page header buttons stack */
+  .page-header>div{width:100%;display:flex;gap:8px}
+  .page-header .btn{flex:1;justify-content:center}
+  /* Toolbar search full width */
+  .search-box{min-width:0;width:100%}
+  /* Section cards compact */
+  .section-card{padding:12px}
+  /* Form fields touch-friendly */
+  .form-field input,.form-field select,.form-field textarea{
+    padding:12px;font-size:16px; /* 16px evita zoom no iOS */
+    min-height:44px;
+  }
+  .btn{min-height:44px;padding:10px 16px}
+  .btn-sm{min-height:38px}
+  /* Modal footer stacked on very small */
+  .modal-foot{flex-direction:row;gap:8px;padding:12px 16px;padding-bottom:max(12px,env(safe-area-inset-bottom))}
+  .modal-foot .btn{flex:1;justify-content:center}
+  /* Stat cards */
+  .stat{padding:12px}
+  .stat-label{font-size:10px}
 }
-@media(max-width:400px){
-  .stats-grid{grid-template-columns:1fr}
+
+/* ── RESPONSIVO MOBILE ── */
+@media(max-width:520px){
+  .stats-grid{grid-template-columns:1fr 1fr}
+  /* Esconder tabela desktop, mostrar cards mobile */
+  .table-wrap{display:none}
+  .reg-cards{display:flex;flex-direction:column;gap:10px;padding:12px}
+  .reg-card{
+    background:#fff;border-radius:var(--radius-lg);
+    border:1px solid var(--border);padding:14px;
+    box-shadow:var(--shadow);
+  }
+  .reg-card-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+  .reg-card-id{font-family:var(--mono);font-size:11px;color:var(--text3)}
+  .reg-card-body{display:grid;grid-template-columns:1fr 1fr;gap:6px 12px;margin-bottom:10px}
+  .reg-card-field{font-size:12px}
+  .reg-card-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);margin-bottom:1px}
+  .reg-card-val{color:var(--text);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .reg-card-val.mono{font-family:var(--mono)}
+  .reg-card-footer{display:flex;align-items:center;justify-content:space-between;padding-top:10px;border-top:1px solid var(--border)}
+  /* Usuários table também em cards */
+  .user-cards{display:flex;flex-direction:column;gap:8px;padding:12px}
+  .user-card{background:#fff;border:1px solid var(--border);border-radius:var(--radius-lg);padding:12px;display:flex;align-items:center;gap:12px;box-shadow:var(--shadow)}
+  .user-card-info{flex:1;min-width:0}
+  .user-card-name{font-weight:600;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .user-card-meta{font-size:11px;color:var(--text3);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  /* Esconder thead/tbody de usuários */
+  #page-usuarios .table-wrap{display:none}
+  /* Admin cards 2 col */
+  .admin-cards{grid-template-columns:1fr 1fr}
+  /* Dashboard charts */
+  #page-dashboard>div[style*="grid-template-columns:1fr 1fr"]{display:block!important}
+  #page-dashboard>div[style*="grid-template-columns:1fr 1fr"]>*{margin-bottom:14px}
+  /* Login card compact */
+  .login-card{padding:22px 18px}
+  /* Modal body padding */
+  .modal-body{padding:16px}
+}
+
+@media(max-width:360px){
+  .stats-grid{grid-template-columns:1fr 1fr}
+  .main{padding:10px}
+  .reg-card-body{grid-template-columns:1fr}
 }
 </style>
 </head>
@@ -410,6 +484,8 @@ td.truncate{max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ell
             </div>
             <div id="loadingRegistros" class="loading-row"><span class="spin spin-dark"></span> Carregando...</div>
           </div>
+          <!-- Cards mobile -->
+          <div class="reg-cards" id="regCards" style="display:none"></div>
           <div class="tfoot-bar"><span id="footerReg">—</span></div>
         </div>
       </div>
@@ -429,6 +505,8 @@ td.truncate{max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ell
             <div id="emptyUsers" class="empty" style="display:none"><p>Nenhum usuário</p></div>
             <div id="loadingUsers" class="loading-row"><span class="spin spin-dark"></span> Carregando...</div>
           </div>
+          <!-- Cards mobile usuários -->
+          <div class="user-cards" id="userCards" style="display:none"></div>
         </div>
       </div>
 
@@ -777,6 +855,7 @@ function setupApp(){
   $('adminNav').style.display=isAdmin?'':'none';
   $('adminDivider').style.display=isAdmin?'':'none';
   setupLogo();
+  applyResponsiveLayout();
 }
 
 /* ══════════════════════════════════════════════
@@ -853,6 +932,7 @@ async function loadRegistros(){
   allRegistros=data||[];
   updateStats();
   renderRegistros();
+  applyResponsiveLayout();
 }
 
 function updateStats(){
@@ -882,6 +962,8 @@ function renderRegistros(){
   const setor=currentProfile?.setor||'';
   const canEdit=role==='lider'||role==='admin'||setor==='expedicao'||setor==='recebimento'||setor==='logistica'||setor==='compras'||setor==='manutencao'||setor==='direcao';
   const canDelete=role==='admin';
+
+  // Desktop table
   tb.innerHTML=filtered.map(r=>`
     <tr>
       <td class="mono">#${r.id}</td>
@@ -903,7 +985,54 @@ function renderRegistros(){
       </div></td>
     </tr>
   `).join('');
+
+  // Mobile cards
+  const mc=$('regCards');
+  if(!mc) return;
+  if(!filtered.length){mc.innerHTML='';return;}
+  mc.innerHTML=filtered.map(r=>`
+    <div class="reg-card">
+      <div class="reg-card-head">
+        <span class="reg-card-id">#${r.id} · ${fmtDate(r.data_saida)}</span>
+        <span class="badge ${statusBadge[r.status]||'b-pendente'}">${esc(r.status||'Pendente')}</span>
+      </div>
+      <div class="reg-card-body">
+        <div class="reg-card-field"><div class="reg-card-label">Prestador</div><div class="reg-card-val"><strong>${esc(r.prestador||'—')}</strong></div></div>
+        <div class="reg-card-field"><div class="reg-card-label">Resp. Saída</div><div class="reg-card-val">${esc(r.resp_saida||'—')}</div></div>
+        <div class="reg-card-field"><div class="reg-card-label">Cond. Saída</div><div class="reg-card-val">${r.condicao_saida?`<span class="badge ${condBadge[r.condicao_saida]||'b-pendente'}" style="font-size:10px">${esc(r.condicao_saida)}</span>`:'—'}</div></div>
+        <div class="reg-card-field"><div class="reg-card-label">Retorno</div><div class="reg-card-val">${r.data_retorno?fmtDate(r.data_retorno):'—'}</div></div>
+        ${r.nf?`<div class="reg-card-field"><div class="reg-card-label">NF</div><div class="reg-card-val mono">${esc(r.nf)}</div></div>`:''}
+        ${r.pedido?`<div class="reg-card-field"><div class="reg-card-label">Pedido</div><div class="reg-card-val mono">${esc(r.pedido)}</div></div>`:''}
+      </div>
+      <div class="reg-card-footer">
+        <div style="font-size:11px;color:var(--text3)">${r.condicao_retorno?`<span class="badge ${condBadge[r.condicao_retorno]||'b-pendente'}" style="font-size:10px">${esc(r.condicao_retorno)}</span>`:''}</div>
+        <div class="actions">
+          ${canEdit?`<button class="icon-btn" title="Editar" onclick="editRegistro(${r.id})">${iconEdit}</button>`:''}
+          ${canDelete?`<button class="icon-btn del" title="Excluir" onclick="deleteRegistro(${r.id})">${iconTrash}</button>`:''}
+        </div>
+      </div>
+    </div>
+  `).join('');
 }
+
+/* ══════════════════════════════════════════════
+   RESPONSIVIDADE — alternar cards/tabela
+══════════════════════════════════════════════ */
+function applyResponsiveLayout(){
+  const mobile=window.innerWidth<=520;
+  const tw=document.querySelector('#page-registros .table-wrap');
+  const rc=$('regCards');
+  if(tw) tw.style.display=mobile?'none':'';
+  if(rc) rc.style.display=mobile?'flex':'none';
+  const uwrap=document.querySelector('#page-usuarios .table-wrap');
+  const uc=$('userCards');
+  if(uwrap) uwrap.style.display=mobile?'none':'';
+  if(uc) uc.style.display=mobile?'flex':'none';
+}
+window.addEventListener('resize',applyResponsiveLayout);
+// Chamar após renderizar
+const _origRenderReg=renderRegistros;
+// (já integrado — applyResponsiveLayout chamado em setupApp)
 
 /* ══════════════════════════════════════════════
    MODAL REGISTRO — ABRIR / SALVAR
@@ -1162,6 +1291,7 @@ async function loadUsers(){
   $('loadingUsers').style.display='none';
   allUsers=data||[];
   renderUsers();
+  applyResponsiveLayout();
 }
 
 function renderUsers(){
@@ -1180,6 +1310,24 @@ function renderUsers(){
       <td><span class="badge ${roleBadge[u.role]||'b-usuario'}">${roleLabel[u.role]||'Usuário'}</span></td>
       <td><button class="icon-btn" onclick="openUserModal('${u.id}')">${iconEdit}</button></td>
     </tr>`).join('');
+
+  // Mobile user cards
+  const uc=$('userCards');
+  if(uc){
+    uc.innerHTML=allUsers.map(u=>`
+      <div class="user-card">
+        <div class="t-avatar" style="width:40px;height:40px;font-size:14px;flex-shrink:0">${(u.nome||'U').slice(0,2).toUpperCase()}</div>
+        <div class="user-card-info">
+          <div class="user-card-name">${esc(u.nome)}</div>
+          <div class="user-card-meta">${esc(u.email||'')}${u.setor?` · ${setorLabel[u.setor]||u.setor}`:''}</div>
+          <div style="margin-top:5px;display:flex;gap:5px;flex-wrap:wrap">
+            <span class="badge ${roleBadge[u.role]||'b-usuario'}" style="font-size:10px">${roleLabel[u.role]||'Usuário'}</span>
+            ${u.turno?`<span class="badge" style="background:var(--gray-lt);color:var(--text2);font-size:10px">${esc(u.turno)}</span>`:''}
+          </div>
+        </div>
+        <button class="icon-btn" onclick="openUserModal('${u.id}')">${iconEdit}</button>
+      </div>`).join('');
+  }
 
   // Cards admin
   $('adminCards').innerHTML=`
