@@ -8,6 +8,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <style>
 :root{
   --wp-blue:#1B2FA6;--wp-blue2:#152480;
@@ -481,6 +482,7 @@ td.truncate{max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ell
                   <th>Acomp. Recebimento</th>
                   <th>NF</th>
                   <th>Pedido</th>
+                  <th>Verif. Técnica</th>
                   <th>Status</th>
                   <th>Ações</th>
                 </tr>
@@ -544,7 +546,7 @@ td.truncate{max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ell
         </div>
         <div class="grid2">
           <div class="form-field"><label>Data de Saída</label><input type="date" id="rDataSaida"></div>
-          <div class="form-field"><label>Responsável na Saída</label><input type="text" id="rRespSaida" placeholder="Nome do responsável"></div>
+          <div class="form-field"><label>Responsável pela Saída (Manutenção)</label><input type="text" id="rRespSaida" placeholder="Nome do responsável"></div>
         </div>
         <div class="grid2">
           <div class="form-field"><label>Prestador de Serviço</label><input type="text" id="rPrestador" placeholder="Nome do prestador ou empresa"></div>
@@ -588,7 +590,7 @@ td.truncate{max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ell
         </div>
         <div class="grid2">
           <div class="form-field"><label>Data de Retorno</label><input type="date" id="rDataRetorno"></div>
-          <div class="form-field"><label>Responsável no Retorno</label><input type="text" id="rRespRetorno" placeholder="Nome do responsável"></div>
+          <div class="form-field"><label>Responsável pelo Retorno (Manutenção)</label><input type="text" id="rRespRetorno" placeholder="Nome do responsável"></div>
         </div>
         <div class="grid2">
           <div class="form-field"><label>Condições do Equipamento (Retorno)</label>
@@ -629,6 +631,29 @@ td.truncate{max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ell
         </div>
       </div>
       </div><!-- /secaoRetorno -->
+
+      <!-- VERIFICAÇÃO TÉCNICA -->
+      <div class="section-card" id="secaoVerificacaoTecnica">
+        <div class="section-card-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+          Verificação Técnica (Manutenção)
+        </div>
+        <div class="form-field">
+          <label>Verificação técnica realizada?</label>
+          <select id="rVerificacaoTecnica" disabled>
+            <option value="">Pendente</option>
+            <option value="sim">Sim — Verificação concluída</option>
+            <option value="nao">Não — Ainda pendente</option>
+          </select>
+          <p id="rVerificacaoDisplay" style="font-size:13px;font-weight:600;margin-top:6px;display:none;padding:8px 10px;border-radius:var(--radius);background:var(--amber-lt);color:var(--amber)">
+            ⏳ Aguardando verificação técnica da Manutenção
+          </p>
+        </div>
+        <div class="form-field" id="obsVerifField" style="display:none">
+          <label>Observação da verificação técnica</label>
+          <textarea id="rObsVerificacao" placeholder="Descreva o resultado da verificação técnica..." disabled></textarea>
+        </div>
+      </div>
 
       <!-- ANEXOS -->
       <div class="form-field">
@@ -746,6 +771,18 @@ const SUPABASE_URL = 'https://viqezviwijbauuibcjqf.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZpcWV6dml3aWpiYXV1aWJjanFmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA5MDczMjMsImV4cCI6MjA5NjQ4MzMyM30.0dxM31DPkvtw5sNKbvd3JrkAbR5tNb89ppbOgJBg9jE';
 const { createClient } = supabase;
 const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+/* ══════════════════════════════════════════════
+   EMAILJS CONFIG — substitua pelos seus dados
+   Acesse https://www.emailjs.com para criar conta grátis
+   SERVICE_ID: seu serviço de e-mail (ex: Gmail)
+   TEMPLATE_ID: template com variáveis {{to_email}}, {{cc_email}}, {{registro_id}}, {{prestador}}, {{data_saida}}, {{resp_saida}}, {{condicao_retorno}}
+══════════════════════════════════════════════ */
+const EMAILJS_PUBLIC_KEY  = '61L873PhuQJksTI9P';   // ► substitua
+const EMAILJS_SERVICE_ID  = 'service_cazqiul';           // ► substitua
+const EMAILJS_TEMPLATE_ID = 'template_p6i0yhj';          // ► substitua
+const EMAIL_DESTINATARIO  = 'alyson.lopes@worldpost.com.br';
+const EMAIL_COPIA         = 'alysonblopes@gmail.com';
 
 /* ══════════════════════════════════════════════
    LOGO — substitua pela URL da sua logo
@@ -1029,6 +1066,12 @@ function renderRegistros(){
       <td class="truncate">${esc(r.acomp_recebimento||'—')}</td>
       <td class="mono">${esc(r.nf||'—')}</td>
       <td class="mono">${esc(r.pedido||'—')}</td>
+      <td>${r.verificacao_tecnica==='sim'
+        ?'<span class="badge b-ok">✓ Sim</span>'
+        :(r.data_retorno&&r.resp_retorno&&r.condicao_retorno&&r.acomp_recebimento)
+          ?'<span class="badge b-pendente">⏳ Pendente</span>'
+          :'—'
+      }</td>
       <td><span class="badge ${statusBadge[r.status]||'b-pendente'}">${esc(r.status||'Pendente')}</span></td>
       <td><div class="actions">
         ${canEdit?`<button class="icon-btn" title="Editar" onclick="editRegistro(${r.id})">${iconEdit}</button>`:''}
@@ -1056,7 +1099,14 @@ function renderRegistros(){
         ${r.pedido?`<div class="reg-card-field"><div class="reg-card-label">Pedido</div><div class="reg-card-val mono">${esc(r.pedido)}</div></div>`:''}
       </div>
       <div class="reg-card-footer">
-        <div style="font-size:11px;color:var(--text3)">${r.condicao_retorno?`<span class="badge ${condBadge[r.condicao_retorno]||'b-pendente'}" style="font-size:10px">${esc(r.condicao_retorno)}</span>`:''}</div>
+        <div style="font-size:11px;color:var(--text3);display:flex;gap:4px;flex-wrap:wrap">
+          ${r.condicao_retorno?`<span class="badge ${condBadge[r.condicao_retorno]||'b-pendente'}" style="font-size:10px">${esc(r.condicao_retorno)}</span>`:''}
+          ${(r.data_retorno&&r.resp_retorno&&r.condicao_retorno&&r.acomp_recebimento)?
+            (r.verificacao_tecnica==='sim'
+              ?'<span class="badge b-ok" style="font-size:10px">✓ Verif.</span>'
+              :'<span class="badge b-pendente" style="font-size:10px">⏳ Verif.</span>')
+            :''}
+        </div>
         <div class="actions">
           ${canEdit?`<button class="icon-btn" title="Editar" onclick="editRegistro(${r.id})">${iconEdit}</button>`:''}
           ${canDelete?`<button class="icon-btn del" title="Excluir" onclick="deleteRegistro(${r.id})">${iconTrash}</button>`:''}
@@ -1114,6 +1164,11 @@ function openRegistroModal(r=null,modo=''){
   $('rPlacaRetorno').value=r?.placa_retorno||'';
   $('rMotoristaRetorno').value=r?.motorista_retorno||'';
   $('fotoSaidaUrl').value=r?.foto_saida_url||'';
+
+  // Verificação técnica
+  $('rVerificacaoTecnica').value=r?.verificacao_tecnica||'';
+  $('rObsVerificacao').value=r?.obs_verificacao||'';
+  updateVerificacaoUI(r?.verificacao_tecnica||'');
   if(r?.foto_saida_url){
     $('fotoSaidaPreview').src=r.foto_saida_url;
     $('fotoSaidaPreviewWrap').style.display='';
@@ -1175,16 +1230,50 @@ function openRegistroModal(r=null,modo=''){
   // Foto saída: somente expedição e admin podem adicionar
   $('fotoSaidaField').style.display=(isExpedicao||isAdmin||(!isRecebimento&&setor!=='recebimento'))?'':'none';
 
+  // Verificação técnica: somente Manutenção e Admin podem editar
+  const isManutencao = setor==='manutencao';
+  const selVerif=$('rVerificacaoTecnica');
+  const obsVerif=$('rObsVerificacao');
+  const dispVerif=$('rVerificacaoDisplay');
+  const hasRetorno = !!(r?.data_retorno && r?.resp_retorno && r?.condicao_retorno && r?.acomp_recebimento);
+
+  if(isManutencao || isAdmin){
+    selVerif.disabled = false;
+    if(obsVerif) obsVerif.disabled = false;
+    dispVerif.style.display='none';
+    selVerif.style.display='';
+  } else {
+    selVerif.disabled = true;
+    selVerif.style.display='none';
+    if(hasRetorno && (r?.verificacao_tecnica||'') !== 'sim'){
+      dispVerif.style.display='block';
+    } else {
+      dispVerif.style.display='none';
+    }
+  }
+  $('secaoVerificacaoTecnica').style.display = hasRetorno ? '' : 'none';
+  selVerif.onchange = function(){ updateVerificacaoUI(this.value); };
+
   if(r?.anexos?.length) renderExistingFiles(r.anexos);
   openModal('mRegistro');
 }
 
+function updateVerificacaoUI(val){
+  const obsField=$('obsVerifField');
+  const dispVerif=$('rVerificacaoDisplay');
+  if(obsField) obsField.style.display=(val==='sim'||val==='nao')?'':'none';
+  if(dispVerif && val!=='sim' && val!=='nao'){
+    // mostra aviso se não decidido ainda mas há retorno
+  }
+}
+
 function calcStatus(r){
   if(!r) return 'Pendente';
-  // Retornado: todos os campos obrigatórios de retorno preenchidos
   const temRetorno = r.data_retorno && r.resp_retorno && r.condicao_retorno && r.acomp_recebimento;
-  if(temRetorno) return 'Retornado';
-  // Pendente padrão
+  if(!temRetorno) return 'Pendente';
+  // Retorno preenchido: só finaliza se verificação técnica for 'sim'
+  if(r.verificacao_tecnica === 'sim') return 'Retornado';
+  // Tem retorno mas falta verificação técnica
   return 'Pendente';
 }
 
@@ -1227,9 +1316,10 @@ async function saveRegistro(){
   const nf=isExpedicao?null:(v('rNF')||null);
   const pedido=isExpedicao?null:(v('rPedido')||null);
   const temRetorno=dataRetorno&&respRetorno&&condRetorno&&acompRecebimento;
+  const verificacaoTecnica = v('rVerificacaoTecnica')||null;
   let autoStatus;
   if(isAdmin) autoStatus=v('rStatus');
-  else if(temRetorno) autoStatus='Retornado';
+  else if(temRetorno && verificacaoTecnica==='sim') autoStatus='Retornado';
   else autoStatus='Pendente';
 
   const payload={
@@ -1252,6 +1342,8 @@ async function saveRegistro(){
     nf,
     pedido,
     status:autoStatus,
+    verificacao_tecnica:verificacaoTecnica,
+    obs_verificacao:v('rObsVerificacao')||null,
   };
 
   const isRecebimentoRetorno = (setor==='recebimento'&&!isAdmin&&!id);
@@ -1294,6 +1386,21 @@ async function saveRegistro(){
 
   pendingFotoSaida=null;
   resetBtn(btn,'Salvar');
+
+  // Disparar e-mail se retorno preenchido mas verificação técnica pendente
+  const _temRetorno2 = payload.data_retorno && payload.resp_retorno && payload.condicao_retorno && payload.acomp_recebimento;
+  const _verificPendente = _temRetorno2 && verificacaoTecnica !== 'sim';
+  if(_verificPendente){
+    enviarEmailVerificacaoPendente({
+      id: registroId,
+      prestador: payload.prestador,
+      data_saida: payload.data_saida,
+      resp_saida: payload.resp_saida,
+      condicao_retorno: payload.condicao_retorno,
+      data_retorno: payload.data_retorno,
+    });
+  }
+
   toast(id?'Registro atualizado!':'Registro criado!','ok');
   closeModal('mRegistro');
   await loadRegistros();
@@ -1351,6 +1458,29 @@ function renderExistingFiles(anexos){
 }
 
 /* ══════════════════════════════════════════════
+   E-MAIL — VERIFICAÇÃO TÉCNICA PENDENTE
+══════════════════════════════════════════════ */
+async function enviarEmailVerificacaoPendente(r){
+  try{
+    emailjs.init(EMAILJS_PUBLIC_KEY);
+    await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
+      to_email:   EMAIL_DESTINATARIO,
+      cc_email:   EMAIL_COPIA,
+      registro_id: r.id,
+      prestador:   r.prestador || '—',
+      data_saida:  fmtDate(r.data_saida),
+      resp_saida:  r.resp_saida || '—',
+      condicao_retorno: r.condicao_retorno || '—',
+      data_retorno: fmtDate(r.data_retorno),
+      link_sistema: window.location.href,
+    });
+    console.log('[E-mail] Notificação de verificação técnica pendente enviada para', EMAIL_DESTINATARIO);
+  } catch(err){
+    console.warn('[E-mail] Falha ao enviar notificação:', err);
+  }
+}
+
+/* ══════════════════════════════════════════════
    EXPORTAR EXCEL
 ══════════════════════════════════════════════ */
 function exportExcel(){
@@ -1370,6 +1500,8 @@ function exportExcel(){
     'Acomp. Recebimento':r.acomp_recebimento||'',
     'NF':r.nf||'',
     'Pedido':r.pedido||'',
+    'Verificação Técnica':r.verificacao_tecnica==='sim'?'Sim':r.verificacao_tecnica==='nao'?'Não':'Pendente',
+    'Obs. Verificação':r.obs_verificacao||'',
     'Status':r.status||'',
   }));
   const ws=XLSX.utils.json_to_sheet(rows);
