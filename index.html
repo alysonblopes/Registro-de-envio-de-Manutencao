@@ -430,9 +430,9 @@ td.truncate{max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ell
         <!-- Stats -->
         <div class="stats-grid">
           <div class="stat"><div class="stat-label">Total</div><div class="stat-val" id="sTotal">—</div></div>
-          <div class="stat"><div class="stat-label">Em Campo</div><div class="stat-val" id="sSaida" style="color:var(--red)">—</div></div>
+          <div class="stat"><div class="stat-label">Pendentes</div><div class="stat-val" id="sSaida" style="color:var(--amber)">—</div></div>
           <div class="stat"><div class="stat-label">Retornados</div><div class="stat-val" id="sRetorno" style="color:var(--green)">—</div></div>
-          <div class="stat"><div class="stat-label">Manutenção</div><div class="stat-val" id="sManutencao" style="color:var(--amber)">—</div></div>
+          <div class="stat"><div class="stat-label">Em Manutenção</div><div class="stat-val" id="sManutencao" style="color:var(--red)">—</div></div>
         </div>
 
         <!-- Toolbar -->
@@ -444,7 +444,6 @@ td.truncate{max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ell
           <select class="filter-sel" id="fStatus" onchange="renderRegistros()">
             <option value="">Todos os status</option>
             <option>Pendente</option>
-            <option>Em Campo</option>
             <option>Retornado</option>
             <option>Em Manutenção</option>
             <option>Cancelado</option>
@@ -550,6 +549,10 @@ td.truncate{max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ell
         </div>
         <div class="form-field"><label>Observação sobre condição (saída)</label><textarea id="rObsSaida" placeholder="Descreva detalhes das condições, avarias ou observações..."></textarea></div>
         <div class="form-field"><label>Acompanhante Envio (Expedição)</label><input type="text" id="rAcompExpedicao" placeholder="Nome do acompanhante na expedição"></div>
+        <div class="grid2">
+          <div class="form-field"><label>Placa do Veículo (Saída)</label><input type="text" id="rPlacaSaida" placeholder="Ex: ABC-1234" style="text-transform:uppercase"></div>
+          <div class="form-field"><label>Nome do Motorista (Saída)</label><input type="text" id="rMotoristaSaida" placeholder="Nome do motorista"></div>
+        </div>
         <!-- Foto de saída — obrigatória para Expedição -->
         <div class="form-field" id="fotoSaidaField">
           <label>Foto do Equipamento na Saída <span style="font-size:11px;color:var(--text3);font-weight:400">(JPG ou PNG — obrigatória para Expedição)</span></label>
@@ -589,6 +592,10 @@ td.truncate{max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ell
           <div class="form-field"><label>Acompanhante Recebimento</label><input type="text" id="rAcompRecebimento" placeholder="Nome do acompanhante no recebimento"></div>
         </div>
         <div class="form-field"><label>Observação sobre condição (retorno)</label><textarea id="rObsRetorno" placeholder="Descreva detalhes das condições, avarias ou observações..."></textarea></div>
+        <div class="grid2">
+          <div class="form-field"><label>Placa do Veículo (Retorno)</label><input type="text" id="rPlacaRetorno" placeholder="Ex: ABC-1234" style="text-transform:uppercase"></div>
+          <div class="form-field"><label>Nome do Motorista (Retorno)</label><input type="text" id="rMotoristaRetorno" placeholder="Nome do motorista"></div>
+        </div>
       </div>
 
       <!-- DOCUMENTOS -->
@@ -603,7 +610,6 @@ td.truncate{max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ell
           <div class="form-field" id="rStatusField"><label>Status</label>
             <select id="rStatus" disabled>
               <option value="Pendente">Pendente</option>
-              <option value="Em Campo">Em Campo</option>
               <option value="Retornado">Retornado</option>
               <option value="Em Manutenção">Em Manutenção</option>
               <option value="Cancelado">Cancelado</option>
@@ -907,10 +913,10 @@ function renderDashboard(){
     }).join(''):'<p style="color:var(--text3);font-size:13px">Sem dados</p>';
   }
 
-  const statusColors={'Em Campo':'var(--red)','Retornado':'var(--green)','Em Manutenção':'var(--amber)','Extraviado':'#374151','Cancelado':'var(--gray-lt)'};
+  const statusColors={'Pendente':'var(--amber)','Retornado':'var(--green)','Em Manutenção':'var(--red)','Cancelado':'var(--gray-lt)'};
   const condColors={'Bom estado':'var(--green)','Com avarias':'var(--red)','Necessita revisão':'var(--amber)'};
 
-  barChart('dsChartStatus',['Em Campo','Retornado','Em Manutenção','Extraviado','Cancelado'].map(k=>({k,v:allRegistros.filter(r=>r.status===k).length})).filter(i=>i.v>0),statusColors);
+  barChart('dsChartStatus',['Pendente','Retornado','Em Manutenção','Cancelado'].map(k=>({k,v:allRegistros.filter(r=>r.status===k).length})).filter(i=>i.v>0),statusColors);
   barChart('dsChartCondicao',['Bom estado','Com avarias','Necessita revisão'].map(k=>({k,v:allRegistros.filter(r=>r.condicao_saida===k).length})).filter(i=>i.v>0),condColors);
 
   const pCount={};
@@ -937,7 +943,7 @@ async function loadRegistros(){
 
 function updateStats(){
   $('sTotal').textContent=allRegistros.length;
-  $('sSaida').textContent=allRegistros.filter(r=>r.status==='Em Campo').length;
+  $('sSaida').textContent=allRegistros.filter(r=>r.status==='Pendente').length;
   $('sRetorno').textContent=allRegistros.filter(r=>r.status==='Retornado').length;
   $('sManutencao').textContent=allRegistros.filter(r=>r.status==='Em Manutenção').length;
 }
@@ -1058,6 +1064,10 @@ function openRegistroModal(r=null){
   $('rAcompRecebimento').value=r?.acomp_recebimento||'';
   $('rNF').value=r?.nf||'';
   $('rPedido').value=r?.pedido||'';
+  $('rPlacaSaida').value=r?.placa_saida||'';
+  $('rMotoristaSaida').value=r?.motorista_saida||'';
+  $('rPlacaRetorno').value=r?.placa_retorno||'';
+  $('rMotoristaRetorno').value=r?.motorista_retorno||'';
   $('fotoSaidaUrl').value=r?.foto_saida_url||'';
   if(r?.foto_saida_url){
     $('fotoSaidaPreview').src=r.foto_saida_url;
@@ -1114,9 +1124,15 @@ function openRegistroModal(r=null){
 
 function calcStatus(r){
   if(!r) return 'Pendente';
+  const temNF = r?.nf && r.nf.trim();
+  const temPedido = r?.pedido && r.pedido.trim();
   const temRetorno = r.data_retorno && r.resp_retorno && r.condicao_retorno && r.acomp_recebimento;
+  // Retornado: tem todos os dados de retorno
   if(temRetorno) return 'Retornado';
-  return 'Pendente';
+  // Pendente: falta NF ou pedido (documentação incompleta)
+  if(!temNF || !temPedido) return 'Pendente';
+  // Em Manutenção: tem NF e pedido mas ainda não retornou
+  return 'Em Manutenção';
 }
 
 function editRegistro(id){ const r=allRegistros.find(x=>x.id===id);if(r)openRegistroModal(r); }
@@ -1145,8 +1161,14 @@ async function saveRegistro(){
   const respRetorno=isExpedicao?null:(v('rRespRetorno')||null);
   const condRetorno=isExpedicao?null:(v('rCondicaoRetorno')||null);
   const acompRecebimento=isExpedicao?null:(v('rAcompRecebimento')||null);
+  const nf=isExpedicao?null:(v('rNF')||null);
+  const pedido=isExpedicao?null:(v('rPedido')||null);
   const temRetorno=dataRetorno&&respRetorno&&condRetorno&&acompRecebimento;
-  const autoStatus=isAdmin?v('rStatus'):(temRetorno?'Retornado':'Pendente');
+  let autoStatus;
+  if(isAdmin) autoStatus=v('rStatus');
+  else if(temRetorno) autoStatus='Retornado';
+  else if(nf&&pedido) autoStatus='Em Manutenção';
+  else autoStatus='Pendente';
 
   const payload={
     data_saida:v('rDataSaida')||null,
@@ -1155,14 +1177,18 @@ async function saveRegistro(){
     condicao_saida:v('rCondicaoSaida')||null,
     obs_saida:v('rObsSaida')||null,
     acomp_expedicao:v('rAcompExpedicao')||null,
+    placa_saida:v('rPlacaSaida')||null,
+    motorista_saida:v('rMotoristaSaida')||null,
     foto_saida_url,
     data_retorno:dataRetorno,
     resp_retorno:respRetorno,
     condicao_retorno:condRetorno,
     obs_retorno:isExpedicao?null:(v('rObsRetorno')||null),
     acomp_recebimento:acompRecebimento,
-    nf:isExpedicao?null:(v('rNF')||null),
-    pedido:isExpedicao?null:(v('rPedido')||null),
+    placa_retorno:isExpedicao?null:(v('rPlacaRetorno')||null),
+    motorista_retorno:isExpedicao?null:(v('rMotoristaRetorno')||null),
+    nf,
+    pedido,
     status:autoStatus,
   };
 
