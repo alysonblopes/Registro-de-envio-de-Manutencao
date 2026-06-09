@@ -181,6 +181,16 @@ td.truncate{max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ell
 .admin-card h4{font-family:var(--font-cond);font-size:14px;font-weight:700;margin-bottom:3px}
 .admin-card p{font-size:12px;color:var(--text2)}
 
+/* ── FOOTER ── */
+.app-footer{background:var(--wp-blue);color:rgba(255,255,255,.85);padding:16px 24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;font-size:12px;border-top:1px solid rgba(255,255,255,.1)}
+.footer-info{display:flex;align-items:center;gap:20px;flex-wrap:wrap}
+.footer-item{display:flex;align-items:center;gap:6px;color:rgba(255,255,255,.8)}
+.footer-item svg{width:13px;height:13px;flex-shrink:0;opacity:.75}
+.footer-item a{color:rgba(255,255,255,.85);text-decoration:none}
+.footer-item a:hover{color:#fff;text-decoration:underline}
+.footer-copy{font-size:11px;color:rgba(255,255,255,.45);white-space:nowrap}
+@media(max-width:768px){.app-footer{padding:14px;flex-direction:column;align-items:flex-start;gap:8px}.footer-info{gap:12px}.footer-copy{align-self:center;text-align:center;width:100%}}
+
 /* ── HAMBURGUER ── */
 #menuToggle{display:none;background:none;border:none;cursor:pointer;padding:6px;color:#fff}
 #sidebarOverlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:149}
@@ -708,6 +718,26 @@ td.truncate{max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ell
 </div>
 
 <div id="toast"></div>
+
+<!-- ── FOOTER ── -->
+<footer class="app-footer" id="appFooter" style="display:none">
+  <div class="footer-info">
+    <span class="footer-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+      Av. Charles Goodyear, 65/54 — Dist. Industrial Cururuquara, Santana de Parnaíba - SP &nbsp;·&nbsp; CEP 06524-115
+    </span>
+    <span class="footer-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      Seg – Sex: 8:00 às 17:48
+    </span>
+    <span class="footer-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+      <a href="mailto:alyson.lopes@worldpost.com.br">alyson.lopes@worldpost.com.br</a>
+    </span>
+  </div>
+  <span class="footer-copy">© <span id="footerYear"></span> World Post</span>
+</footer>
+
 <script>
 /* ══════════════════════════════════════════════
    CONFIG SUPABASE — substitua pelas suas credenciais
@@ -847,6 +877,8 @@ async function loadProfile(){
 function setupApp(){
   $('loginScreen').style.display='none';
   $('appScreen').style.display='block';
+  const af=document.getElementById('appFooter');if(af)af.style.display='flex';
+  const fy=document.getElementById('footerYear');if(fy)fy.textContent=new Date().getFullYear();
   const p=currentProfile;
   const roleMap={admin:'Administrador',lider:'Líder',usuario:'Usuário'};
   const setorMap={expedicao:'Expedição',recebimento:'Recebimento',logistica:'Logística',compras:'Compras',manutencao:'Manutenção',direcao:'Direção'};
