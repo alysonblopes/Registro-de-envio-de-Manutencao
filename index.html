@@ -426,11 +426,13 @@ td.truncate{max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ell
       <div class="page active" id="page-registros">
         <div class="page-header">
           <div class="page-title">Registros de Equipamentos</div>
-          <div style="display:flex;gap:8px">
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
             <button class="btn" onclick="exportExcel()">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-              Exportar Excel
+              Exportar Tudo
             </button>
+            <button class="btn btn-sm" id="btnSelMode" onclick="toggleSelectionMode()">☑ Selecionar Registros</button>
+            <button class="btn btn-sm btn-success" id="btnExportSel" onclick="exportExcelSelected()" style="display:none" disabled>⬇ Exportar Selecionados</button>
             <button class="btn btn-primary" id="btnNovoRegistro" onclick="openNovoRegistro()">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
               <span id="btnNovoRegistroTxt">Novo Registro</span>
@@ -469,7 +471,8 @@ td.truncate{max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ell
           <div class="table-wrap">
             <table>
               <thead>
-                <tr>
+                <tr id="theadRow">
+                  <th id="thChk" style="display:none;width:36px;padding:10px 8px"><input type="checkbox" id="cbSelectAll" onchange="toggleSelectAll(this)" style="width:15px;height:15px;cursor:pointer;accent-color:var(--wp-blue)"></th>
                   <th>ID</th>
                   <th>Saída</th>
                   <th>Resp. Saída</th>
@@ -1054,9 +1057,9 @@ async function loadRegistros(){
 
 function updateStats(){
   $('sTotal').textContent=allRegistros.length;
-  $('sSaida').textContent=allRegistros.filter(r=>r.status==='Pendente').length;
-  $('sRetorno').textContent=allRegistros.filter(r=>r.status==='Retornado').length;
-  $('sManutencao').textContent=allRegistros.filter(r=>r.status==='Em Manutenção').length;
+  $('sSaida').textContent=allRegistros.filter(r=>calcStatus(r)==='Pendente').length;
+  $('sRetorno').textContent=allRegistros.filter(r=>calcStatus(r)==='Retornado').length;
+  $('sManutencao').textContent=allRegistros.filter(r=>calcStatus(r)==='Em Manutenção').length;
 }
 
 const statusBadge={
@@ -1065,25 +1068,85 @@ const statusBadge={
 };
 const condBadge={'Bom estado':'b-ok','Com avarias':'b-avariado','Necessita revisão':'b-pendente'};
 
+let selectionMode=false;
+let selectedIds=new Set();
+
+function toggleSelectionMode(){
+  selectionMode=!selectionMode;
+  selectedIds.clear();
+  const btn=$('btnSelMode');
+  if(btn){
+    btn.textContent=selectionMode?'✕ Cancelar Seleção':'☑ Selecionar Registros';
+    btn.className=selectionMode?'btn btn-sm btn-danger':'btn btn-sm';
+  }
+  const exportSelBtn=$('btnExportSel');
+  if(exportSelBtn) exportSelBtn.style.display=selectionMode?'':'none';
+  renderRegistros();
+}
+
+function toggleSelectAll(cb){
+  const checked=cb.checked;
+  document.querySelectorAll('.reg-chk').forEach(c=>{
+    c.checked=checked;
+    const id=parseInt(c.dataset.id);
+    if(checked) selectedIds.add(id); else selectedIds.delete(id);
+  });
+  updateSelectionCount();
+}
+
+function toggleSelectRow(cb){
+  const id=parseInt(cb.dataset.id);
+  if(cb.checked) selectedIds.add(id); else selectedIds.delete(id);
+  // Sync select-all checkbox
+  const all=document.querySelectorAll('.reg-chk');
+  const allChecked=[...all].every(c=>c.checked);
+  const selAllCb=$('cbSelectAll');
+  if(selAllCb) selAllCb.checked=allChecked&&all.length>0;
+  updateSelectionCount();
+}
+
+function updateSelectionCount(){
+  const exportSelBtn=$('btnExportSel');
+  if(exportSelBtn){
+    exportSelBtn.textContent=selectedIds.size>0?`⬇ Exportar ${selectedIds.size} selecionado${selectedIds.size!==1?'s':''}`: '⬇ Exportar Selecionados';
+    exportSelBtn.disabled=selectedIds.size===0;
+  }
+}
+
+function exportExcelSelected(){
+  const toExport=allRegistros.filter(r=>selectedIds.has(r.id));
+  if(!toExport.length){toast('Selecione ao menos um registro.','err');return;}
+  exportExcelRows(toExport);
+}
+
 function renderRegistros(){
   const q=(v('searchInput')||'').toLowerCase();
   const fs=v('fStatus');
-  const filtered=allRegistros.filter(r=>{
+  // Recalcular status de cada registro a partir dos dados, ignorando valor salvo
+  const withCalcStatus=allRegistros.map(r=>({...r, _calcStatus: r.status==='Cancelado'?'Cancelado':calcStatus(r)}));
+  const filtered=withCalcStatus.filter(r=>{
     const txt=((r.resp_saida||'')+(r.prestador||'')+(r.nf||'')+(r.pedido||'')+(r.resp_retorno||'')+(r.acomp_expedicao||'')+(r.acomp_recebimento||'')).toLowerCase();
-    return(!q||txt.includes(q))&&(!fs||r.status===fs);
+    const statusToFilter=r._calcStatus;
+    return(!q||txt.includes(q))&&(!fs||statusToFilter===fs);
   });
   const tb=$('tbRegistros');
   $('emptyRegistros').style.display=filtered.length?'none':'block';
   const _emptyMsg=$('emptyMsg');if(_emptyMsg&&!filtered.length){const _s=currentProfile?.setor||'';_emptyMsg.textContent=(_s==='recebimento'&&currentProfile?.role!=='admin')?'Nenhum registro da Expedição encontrado':'Nenhum registro encontrado';}
-  $('footerReg').textContent=`${filtered.length} de ${allRegistros.length} registro${allRegistros.length!==1?'s':''}`;
+
+  const selCount=selectionMode?` · <span id="selCount" style="color:var(--wp-blue)">${selectedIds.size} selecionado${selectedIds.size!==1?'s':''}</span>`:'';
+  $('footerReg').innerHTML=`${filtered.length} de ${allRegistros.length} registro${allRegistros.length!==1?'s':''}${selCount}`;
   const role=currentProfile?.role||'usuario';
   const setor=currentProfile?.setor||'';
   const canEdit=role==='lider'||role==='admin'||setor==='expedicao'||setor==='recebimento'||setor==='logistica'||setor==='compras'||setor==='manutencao'||setor==='direcao';
   const canDelete=role==='admin';
 
+  const chkCol=selectionMode?`<td style="width:36px;padding:10px 8px"><input type="checkbox" class="reg-chk" data-id="${0}" style="display:none"></td>`:'';
+
   // Desktop table
-  tb.innerHTML=filtered.map(r=>`
-    <tr>
+  tb.innerHTML=filtered.map(r=>{
+    const displayStatus=r._calcStatus;
+    return`<tr style="${selectionMode&&selectedIds.has(r.id)?'background:#EEF0FB':''}" onclick="${selectionMode?`(function(){const c=document.querySelector('.reg-chk[data-id=\\'${r.id}\\']');if(c){c.checked=!c.checked;toggleSelectRow(c);}})()`:''}" ${selectionMode?'style="cursor:pointer"':''}>
+      ${selectionMode?`<td style="width:36px;padding:10px 8px" onclick="event.stopPropagation()"><input type="checkbox" class="reg-chk" data-id="${r.id}" ${selectedIds.has(r.id)?'checked':''} onchange="toggleSelectRow(this)" style="width:15px;height:15px;cursor:pointer;accent-color:var(--wp-blue)"></td>`:''}
       <td class="mono">#${r.id}</td>
       <td>${fmtDate(r.data_saida)}</td>
       <td>${esc(r.resp_saida||'—')}</td>
@@ -1102,23 +1165,37 @@ function renderRegistros(){
           ?'<span class="badge b-pendente">⏳ Pendente</span>'
           :'—'
       }</td>
-      <td><span class="badge ${statusBadge[r.status]||'b-pendente'}">${esc(r.status||'Pendente')}</span></td>
-      <td><div class="actions">
+      <td><span class="badge ${statusBadge[displayStatus]||'b-pendente'}">${esc(displayStatus)}</span></td>
+      <td><div class="actions" onclick="event.stopPropagation()">
         ${canEdit?`<button class="icon-btn" title="Editar" onclick="editRegistro(${r.id})">${iconEdit}</button>`:''}
         ${canDelete?`<button class="icon-btn del" title="Excluir" onclick="deleteRegistro(${r.id})">${iconTrash}</button>`:''}
       </div></td>
-    </tr>
-  `).join('');
+    </tr>`;
+  }).join('');
+
+  // Mostrar/ocultar coluna de checkbox no header
+  const thChk=$('thChk');
+  if(thChk) thChk.style.display=selectionMode?'':'none';
+  // Sync select-all state
+  const cbAll=$('cbSelectAll');
+  if(cbAll){
+    const allChks=document.querySelectorAll('.reg-chk');
+    cbAll.checked=allChks.length>0&&[...allChks].every(c=>c.checked);
+    cbAll.indeterminate=allChks.length>0&&[...allChks].some(c=>c.checked)&&![...allChks].every(c=>c.checked);
+  }
+  updateSelectionCount();
 
   // Mobile cards
   const mc=$('regCards');
   if(!mc) return;
   if(!filtered.length){mc.innerHTML='';return;}
-  mc.innerHTML=filtered.map(r=>`
-    <div class="reg-card">
+  mc.innerHTML=filtered.map(r=>{
+    const displayStatus=r._calcStatus;
+    return`<div class="reg-card" ${selectionMode?`onclick="(function(){const c=document.querySelector('.reg-chk-mob[data-id=\\'${r.id}\\']');if(c){c.checked=!c.checked;toggleSelectRow(c);}})()"`:''}  style="${selectionMode?'cursor:pointer':''}${selectionMode&&selectedIds.has(r.id)?';background:#EEF0FB':''}">
       <div class="reg-card-head">
+        ${selectionMode?`<input type="checkbox" class="reg-chk reg-chk-mob" data-id="${r.id}" ${selectedIds.has(r.id)?'checked':''} onchange="toggleSelectRow(this)" onclick="event.stopPropagation()" style="width:16px;height:16px;cursor:pointer;accent-color:var(--wp-blue);flex-shrink:0">`:''}
         <span class="reg-card-id">#${r.id} · ${fmtDate(r.data_saida)}</span>
-        <span class="badge ${statusBadge[r.status]||'b-pendente'}">${esc(r.status||'Pendente')}</span>
+        <span class="badge ${statusBadge[displayStatus]||'b-pendente'}">${esc(displayStatus)}</span>
       </div>
       <div class="reg-card-body">
         <div class="reg-card-field"><div class="reg-card-label">Prestador</div><div class="reg-card-val"><strong>${esc(r.prestador||'—')}</strong></div></div>
@@ -1137,13 +1214,13 @@ function renderRegistros(){
               :'<span class="badge b-pendente" style="font-size:10px">⏳ Verif.</span>')
             :''}
         </div>
-        <div class="actions">
+        <div class="actions" onclick="event.stopPropagation()">
           ${canEdit?`<button class="icon-btn" title="Editar" onclick="editRegistro(${r.id})">${iconEdit}</button>`:''}
           ${canDelete?`<button class="icon-btn del" title="Excluir" onclick="deleteRegistro(${r.id})">${iconTrash}</button>`:''}
         </div>
       </div>
-    </div>
-  `).join('');
+    </div>`;
+  }).join('');
 }
 
 /* ══════════════════════════════════════════════
@@ -1582,7 +1659,12 @@ async function saveEmailSettings(){
 ══════════════════════════════════════════════ */
 function exportExcel(){
   if(!allRegistros.length){toast('Sem dados para exportar','err');return;}
-  const rows=allRegistros.map(r=>({
+  exportExcelRows(allRegistros);
+}
+
+function exportExcelRows(rows){
+  if(!rows.length){toast('Sem dados para exportar','err');return;}
+  const data=rows.map(r=>({
     'ID':r.id,
     'Data de Saída':fmtDate(r.data_saida),
     'Responsável Saída':r.resp_saida||'',
@@ -1599,13 +1681,13 @@ function exportExcel(){
     'Pedido':r.pedido||'',
     'Verificação Técnica':r.verificacao_tecnica==='sim'?'Sim':r.verificacao_tecnica==='nao'?'Não':'Pendente',
     'Obs. Verificação':r.obs_verificacao||'',
-    'Status':r.status||'',
+    'Status':(r.status==='Cancelado'?'Cancelado':calcStatus(r)),
   }));
-  const ws=XLSX.utils.json_to_sheet(rows);
+  const ws=XLSX.utils.json_to_sheet(data);
   const wb=XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb,ws,'Registros');
   XLSX.writeFile(wb,`equipamentos_${new Date().toISOString().slice(0,10)}.xlsx`);
-  toast('Excel exportado!','ok');
+  toast(`Excel exportado! (${data.length} registro${data.length!==1?'s':''})`, 'ok');
 }
 
 /* ══════════════════════════════════════════════
