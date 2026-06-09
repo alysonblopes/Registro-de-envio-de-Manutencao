@@ -388,6 +388,10 @@ td.truncate{max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ell
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
           Usuários
         </button>
+        <button class="nav-item" onclick="goPage('configuracoes')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+          Configurações
+        </button>
       </div>
     </nav>
 
@@ -510,33 +514,6 @@ td.truncate{max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ell
           <div class="page-title">Usuários</div>
         </div>
         <div class="admin-cards" id="adminCards"></div>
-
-        <!-- Configurações de E-mail — apenas admins -->
-        <div id="emailConfigSection" style="display:none;margin-bottom:22px">
-          <div class="section-card" style="background:var(--surface);border:1px solid var(--border)">
-            <div class="section-card-title">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-              Configurações de Notificação por E-mail
-            </div>
-            <p style="font-size:12px;color:var(--text2);margin-bottom:14px">Defina para quem o sistema deve enviar o e-mail de alerta quando houver verificação técnica pendente.</p>
-            <div class="grid2">
-              <div class="form-field">
-                <label>Destinatário Principal (Para:)</label>
-                <input type="email" id="cfgEmailDestinatario" placeholder="email@empresa.com.br">
-              </div>
-              <div class="form-field">
-                <label>Cópia (CC:) <span style="font-size:10px;font-weight:400;color:var(--text3)">separar múltiplos por vírgula</span></label>
-                <input type="text" id="cfgEmailCopia" placeholder="cc1@empresa.com, cc2@empresa.com">
-              </div>
-            </div>
-            <div style="display:flex;justify-content:flex-end">
-              <button class="btn btn-primary btn-sm" id="btnSaveEmailCfg" onclick="saveEmailSettings()">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-                Salvar Configurações
-              </button>
-            </div>
-          </div>
-        </div>
         <div class="table-card">
           <div class="table-wrap">
             <table>
@@ -548,6 +525,151 @@ td.truncate{max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ell
           </div>
           <!-- Cards mobile usuários -->
           <div class="user-cards" id="userCards" style="display:none"></div>
+        </div>
+      </div>
+
+      <!-- ── CONFIGURAÇÕES ── -->
+      <div class="page" id="page-configuracoes">
+        <div class="page-header">
+          <div class="page-title">Configurações</div>
+        </div>
+
+        <!-- DESTINATÁRIOS -->
+        <div class="section-card" style="background:var(--surface);border:1px solid var(--border);margin-bottom:18px">
+          <div class="section-card-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+            Destinatários das Notificações
+          </div>
+          <p style="font-size:12px;color:var(--text2);margin-bottom:16px">O sistema envia <strong>um e-mail por registro</strong> com status <span class="badge b-pendente" style="font-size:10px">Pendente</span> no horário agendado abaixo.</p>
+          <div class="grid2">
+            <div class="form-field">
+              <label>Destinatário Principal (Para:)</label>
+              <input type="email" id="cfgEmailDestinatario" placeholder="email@empresa.com.br">
+            </div>
+            <div class="form-field">
+              <label>Cópia (CC:) <span style="font-size:10px;font-weight:400;color:var(--text3)">separe múltiplos por vírgula</span></label>
+              <input type="text" id="cfgEmailCopia" placeholder="cc1@empresa.com, cc2@empresa.com">
+            </div>
+          </div>
+        </div>
+
+        <!-- AGENDAMENTO -->
+        <div class="section-card" style="background:var(--surface);border:1px solid var(--border);margin-bottom:18px">
+          <div class="section-card-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            Agendamento de Disparo
+          </div>
+          <p style="font-size:12px;color:var(--text2);margin-bottom:16px">Escolha os horários em que o sistema deve verificar registros pendentes e enviar os alertas. O disparo ocorre enquanto o sistema estiver aberto no navegador.</p>
+          <div class="grid3" style="margin-bottom:14px">
+            <div class="form-field">
+              <label>Horário 1</label>
+              <input type="time" id="cfgHorario1" value="08:00">
+            </div>
+            <div class="form-field">
+              <label>Horário 2 <span style="font-size:10px;font-weight:400;color:var(--text3)">(opcional)</span></label>
+              <input type="time" id="cfgHorario2">
+            </div>
+            <div class="form-field">
+              <label>Horário 3 <span style="font-size:10px;font-weight:400;color:var(--text3)">(opcional)</span></label>
+              <input type="time" id="cfgHorario3">
+            </div>
+          </div>
+          <div style="background:var(--blue-lt);border:1px solid var(--border);border-radius:var(--radius);padding:10px 14px;font-size:12px;color:var(--text2);margin-bottom:14px;display:flex;align-items:flex-start;gap:8px">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--wp-blue)" stroke-width="2" style="flex-shrink:0;margin-top:1px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <span>O agendamento funciona via verificação periódica no navegador (a cada minuto). Para garantia de envio em horário fixo mesmo sem o sistema aberto, recomenda-se um job no servidor.</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+            <div style="flex:1;font-size:12px;color:var(--text3)" id="cfgProximoDisparo">—</div>
+            <div style="display:flex;gap:8px">
+              <button class="btn btn-sm" id="btnDispararAgora" onclick="dispararEmailsPendentes(true)">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                Disparar Agora
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- MODELO DO E-MAIL -->
+        <div class="section-card" style="background:var(--surface);border:1px solid var(--border);margin-bottom:18px">
+          <div class="section-card-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            Modelo do E-mail
+          </div>
+          <p style="font-size:12px;color:var(--text2);margin-bottom:12px">Pré-visualização do e-mail enviado para cada registro pendente. O assunto e os dados são preenchidos automaticamente.</p>
+          <div style="border:1.5px solid var(--border);border-radius:var(--radius-lg);overflow:hidden">
+            <!-- Header do e-mail mockup -->
+            <div style="background:var(--wp-blue);padding:16px 20px;display:flex;align-items:center;gap:10px">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+              <span style="color:white;font-family:var(--font-cond);font-size:15px;font-weight:700;letter-spacing:.5px">World Post — Notificação Automática</span>
+            </div>
+            <div style="padding:20px 24px;background:#fff">
+              <p style="font-size:11px;color:var(--text3);margin-bottom:4px">ASSUNTO</p>
+              <p style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:18px;padding:8px 12px;background:var(--surface2);border-radius:var(--radius)">Resultado de Análise Técnica Pendente — Registro ID #[ID]</p>
+              <p style="font-size:14px;color:var(--text);margin-bottom:12px">Prezado(a),</p>
+              <p style="font-size:13px;color:var(--text2);margin-bottom:14px">Este é um aviso automático do sistema de <strong>Controle de Saída de Equipamentos</strong> da World Post.</p>
+              <p style="font-size:13px;color:var(--text2);margin-bottom:16px">O registro abaixo encontra-se com <strong>análise técnica pendente</strong> e requer atenção:</p>
+
+              <div style="border:1.5px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;margin-bottom:18px">
+                <div style="background:var(--surface2);padding:10px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--text2);border-bottom:1px solid var(--border)">Detalhes do Registro</div>
+                <table style="width:100%;border-collapse:collapse">
+                  <tr style="border-bottom:1px solid var(--border)">
+                    <td style="padding:9px 14px;font-size:12px;font-weight:600;color:var(--text2);width:40%;background:var(--surface2)">ID do Registro</td>
+                    <td style="padding:9px 14px;font-size:12px;color:var(--text)">#[ID]</td>
+                  </tr>
+                  <tr style="border-bottom:1px solid var(--border)">
+                    <td style="padding:9px 14px;font-size:12px;font-weight:600;color:var(--text2);background:var(--surface2)">Prestador de Serviço</td>
+                    <td style="padding:9px 14px;font-size:12px;color:var(--text)">[Prestador]</td>
+                  </tr>
+                  <tr style="border-bottom:1px solid var(--border)">
+                    <td style="padding:9px 14px;font-size:12px;font-weight:600;color:var(--text2);background:var(--surface2)">Data de Saída</td>
+                    <td style="padding:9px 14px;font-size:12px;color:var(--text)">[Data Saída]</td>
+                  </tr>
+                  <tr style="border-bottom:1px solid var(--border)">
+                    <td style="padding:9px 14px;font-size:12px;font-weight:600;color:var(--text2);background:var(--surface2)">Responsável na Saída</td>
+                    <td style="padding:9px 14px;font-size:12px;color:var(--text)">[Resp. Saída]</td>
+                  </tr>
+                  <tr style="border-bottom:1px solid var(--border)">
+                    <td style="padding:9px 14px;font-size:12px;font-weight:600;color:var(--text2);background:var(--surface2)">Data de Retorno</td>
+                    <td style="padding:9px 14px;font-size:12px;color:var(--text)">[Data Retorno]</td>
+                  </tr>
+                  <tr style="border-bottom:1px solid var(--border)">
+                    <td style="padding:9px 14px;font-size:12px;font-weight:600;color:var(--text2);background:var(--surface2)">Condição no Retorno</td>
+                    <td style="padding:9px 14px;font-size:12px;color:var(--text)">[Condição Retorno]</td>
+                  </tr>
+                  <tr>
+                    <td style="padding:9px 14px;font-size:12px;font-weight:600;color:var(--text2);background:var(--surface2)">Status Atual</td>
+                    <td style="padding:9px 14px"><span style="background:#FEF3C7;color:#92600A;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700">⏳ PENDENTE</span></td>
+                  </tr>
+                </table>
+              </div>
+
+              <p style="font-size:13px;color:var(--text2);margin-bottom:16px">Por favor, acesse o sistema e realize a <strong>verificação técnica</strong> para que o registro seja finalizado corretamente.</p>
+              <div style="text-align:center;margin-bottom:18px">
+                <span style="display:inline-block;background:var(--wp-blue);color:white;padding:10px 24px;border-radius:var(--radius);font-size:13px;font-weight:700">Acessar o Sistema</span>
+              </div>
+              <hr style="border:none;border-top:1px solid var(--border);margin-bottom:14px">
+              <p style="font-size:11px;color:var(--text3)">Este é um e-mail automático. Não responda a esta mensagem.<br>World Post · Controle de Saída de Equipamentos</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- HISTÓRICO -->
+        <div class="section-card" style="background:var(--surface);border:1px solid var(--border);margin-bottom:18px">
+          <div class="section-card-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            Histórico de Disparos
+          </div>
+          <div id="cfgEmailLog" style="font-size:12px;color:var(--text3);max-height:200px;overflow-y:auto">
+            <p style="padding:12px 0">Nenhum disparo registrado nesta sessão.</p>
+          </div>
+        </div>
+
+        <!-- BOTÃO SALVAR -->
+        <div style="display:flex;justify-content:flex-end;gap:10px">
+          <button class="btn btn-primary" id="btnSaveEmailCfg" onclick="saveEmailSettings()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            Salvar Configurações
+          </button>
         </div>
       </div>
 
@@ -911,6 +1033,7 @@ document.addEventListener('DOMContentLoaded',()=>{
       await loadProfile();
       setupApp();
       await loadRegistros();
+      await loadEmailSettings(); // iniciar agendador ao logar
     } else {
       currentUser=null;currentProfile=null;
       const ls=$('loginScreen');if(ls)ls.style.display='flex';
@@ -960,8 +1083,6 @@ function setupApp(){
   const isAdmin=p?.role==='admin';
   $('adminNav').style.display=isAdmin?'':'none';
   $('adminDivider').style.display=isAdmin?'':'none';
-  const emailCfgSection=$('emailConfigSection');
-  if(emailCfgSection) emailCfgSection.style.display=isAdmin?'':'none';
   setupLogo();
   applyResponsiveLayout();
   // Adaptar botão "Novo Registro" para recebimento
@@ -987,6 +1108,7 @@ function goPage(page){
     if(n.textContent.toLowerCase().includes(page.slice(0,4))) n.classList.add('active');
   });
   if(page==='usuarios') { loadUsers(); loadEmailSettings(); }
+  if(page==='configuracoes') { loadEmailSettings(); atualizarProximoDisparo(); }
   if(page==='dashboard') renderDashboard();
   document.querySelector('.sidebar').classList.remove('open');
   $('sidebarOverlay').classList.remove('open');
@@ -1519,20 +1641,6 @@ async function saveRegistro(){
   pendingFotoSaida=null;
   resetBtn(btn,'Salvar');
 
-  // Disparar e-mail se retorno preenchido mas verificação técnica pendente
-  const _temRetorno2 = payload.data_retorno && payload.resp_retorno && payload.condicao_retorno && payload.acomp_recebimento;
-  const _verificPendente = _temRetorno2 && verificacaoTecnica !== 'sim';
-  if(_verificPendente){
-    enviarEmailVerificacaoPendente({
-      id: registroId,
-      prestador: payload.prestador,
-      data_saida: payload.data_saida,
-      resp_saida: payload.resp_saida,
-      condicao_retorno: payload.condicao_retorno,
-      data_retorno: payload.data_retorno,
-    });
-  }
-
   toast(id?'Registro atualizado!':'Registro criado!','ok');
   closeModal('mRegistro');
   await loadRegistros();
@@ -1590,45 +1698,29 @@ function renderExistingFiles(anexos){
 }
 
 /* ══════════════════════════════════════════════
-   E-MAIL — VERIFICAÇÃO TÉCNICA PENDENTE
+   CONFIGURAÇÕES DE E-MAIL + AGENDADOR
 ══════════════════════════════════════════════ */
-async function enviarEmailVerificacaoPendente(r){
-  try{
-    emailjs.init(EMAILJS_PUBLIC_KEY);
-    await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
-      to_email:   EMAIL_DESTINATARIO,
-      cc_email:   EMAIL_COPIA,
-      registro_id: r.id,
-      prestador:   r.prestador || '—',
-      data_saida:  fmtDate(r.data_saida),
-      resp_saida:  r.resp_saida || '—',
-      condicao_retorno: r.condicao_retorno || '—',
-      data_retorno: fmtDate(r.data_retorno),
-      link_sistema: window.location.href,
-    });
-    console.log('[E-mail] Notificação de verificação técnica pendente enviada para', EMAIL_DESTINATARIO);
-  } catch(err){
-    console.warn('[E-mail] Falha ao enviar notificação:', err);
-  }
-}
+let emailSchedulerInterval = null;
+let emailDispatchLog = []; // histórico da sessão
 
-/* ══════════════════════════════════════════════
-   CONFIGURAÇÕES DE E-MAIL
-══════════════════════════════════════════════ */
 async function loadEmailSettings(){
   try{
     const {data}=await sb.from('app_settings').select('*').eq('chave','email_config').maybeSingle();
     if(data?.valor){
       const cfg=JSON.parse(data.valor);
       if(cfg.destinatario) EMAIL_DESTINATARIO=cfg.destinatario;
-      if(cfg.copia) EMAIL_COPIA=cfg.copia;
+      if(cfg.copia!==undefined) EMAIL_COPIA=cfg.copia;
+      // Preencher horários
+      const h1=$('cfgHorario1'), h2=$('cfgHorario2'), h3=$('cfgHorario3');
+      if(h1&&cfg.horario1!==undefined) h1.value=cfg.horario1||'08:00';
+      if(h2&&cfg.horario2!==undefined) h2.value=cfg.horario2||'';
+      if(h3&&cfg.horario3!==undefined) h3.value=cfg.horario3||'';
     }
-    // Preencher campos se existirem
-    const fd=$('cfgEmailDestinatario');
-    const fc=$('cfgEmailCopia');
+    const fd=$('cfgEmailDestinatario'), fc=$('cfgEmailCopia');
     if(fd) fd.value=EMAIL_DESTINATARIO;
     if(fc) fc.value=EMAIL_COPIA;
-  }catch(e){console.warn('[Settings] Erro ao carregar configurações de e-mail:',e);}
+  }catch(e){console.warn('[Settings] Erro ao carregar:',e);}
+  iniciarAgendador();
 }
 
 async function saveEmailSettings(){
@@ -1637,21 +1729,144 @@ async function saveEmailSettings(){
   const dest=($('cfgEmailDestinatario')?.value||'').trim();
   const copia=($('cfgEmailCopia')?.value||'').trim();
   if(!dest){toast('Informe o e-mail destinatário.','err');return;}
-  const valor=JSON.stringify({destinatario:dest,copia});
+  const h1=($('cfgHorario1')?.value||'').trim();
+  const h2=($('cfgHorario2')?.value||'').trim();
+  const h3=($('cfgHorario3')?.value||'').trim();
+  const valor=JSON.stringify({destinatario:dest,copia,horario1:h1,horario2:h2,horario3:h3});
   const btn=$('btnSaveEmailCfg');
   if(btn){btn.disabled=true;btn.textContent='Salvando...';}
   const {data:existing}=await sb.from('app_settings').select('id').eq('chave','email_config').maybeSingle();
   let error;
-  if(existing){
-    ({error}=await sb.from('app_settings').update({valor,atualizado_em:new Date().toISOString()}).eq('chave','email_config'));
-  } else {
-    ({error}=await sb.from('app_settings').insert({chave:'email_config',valor}));
-  }
+  if(existing){ ({error}=await sb.from('app_settings').update({valor,atualizado_em:new Date().toISOString()}).eq('chave','email_config')); }
+  else { ({error}=await sb.from('app_settings').insert({chave:'email_config',valor})); }
   if(btn){btn.disabled=false;btn.textContent='Salvar Configurações';}
   if(error){toast('Erro ao salvar: '+error.message,'err');return;}
-  EMAIL_DESTINATARIO=dest;
-  EMAIL_COPIA=copia;
-  toast('Configurações de e-mail salvas!','ok');
+  EMAIL_DESTINATARIO=dest; EMAIL_COPIA=copia;
+  toast('Configurações salvas!','ok');
+  iniciarAgendador();
+  atualizarProximoDisparo();
+}
+
+function getHorariosConfigurados(){
+  const h1=($('cfgHorario1')?.value||'').trim();
+  const h2=($('cfgHorario2')?.value||'').trim();
+  const h3=($('cfgHorario3')?.value||'').trim();
+  return [h1,h2,h3].filter(Boolean);
+}
+
+function atualizarProximoDisparo(){
+  const el=$('cfgProximoDisparo');
+  if(!el) return;
+  const horarios=getHorariosConfigurados();
+  if(!horarios.length){el.textContent='Nenhum horário configurado.';return;}
+  const agora=new Date();
+  const hAtual=agora.getHours()*60+agora.getMinutes();
+  let proxLabel=null;
+  let minDiff=Infinity;
+  horarios.forEach(h=>{
+    const [hh,mm]=h.split(':').map(Number);
+    const totalMin=hh*60+mm;
+    const diff=totalMin>=hAtual?totalMin-hAtual:(1440-hAtual+totalMin);
+    if(diff<minDiff){minDiff=diff;proxLabel=h;}
+  });
+  const hoje=new Date();
+  const [hh2,mm2]=(proxLabel||'').split(':').map(Number);
+  hoje.setHours(hh2,mm2,0,0);
+  if(hoje<agora) hoje.setDate(hoje.getDate()+1);
+  el.innerHTML=`<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:4px"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Próximo disparo: <strong>${proxLabel}</strong> · ${hoje.toLocaleDateString('pt-BR',{weekday:'short',day:'2-digit',month:'2-digit'})}`;
+}
+
+function iniciarAgendador(){
+  if(emailSchedulerInterval) clearInterval(emailSchedulerInterval);
+  emailSchedulerInterval=setInterval(verificarHorarioDisparo, 60000);
+  verificarHorarioDisparo(); // checar imediatamente ao iniciar
+}
+
+function verificarHorarioDisparo(){
+  const horarios=getHorariosConfigurados();
+  if(!horarios.length) return;
+  const agora=new Date();
+  const hAtual=`${String(agora.getHours()).padStart(2,'0')}:${String(agora.getMinutes()).padStart(2,'0')}`;
+  if(horarios.includes(hAtual)){
+    const chaveHoje=`emailDisparado_${hAtual}_${agora.toISOString().slice(0,10)}`;
+    if(localStorage.getItem(chaveHoje)) return; // já disparou hoje nesse horário
+    localStorage.setItem(chaveHoje,'1');
+    dispararEmailsPendentes(false);
+  }
+  atualizarProximoDisparo();
+}
+
+async function dispararEmailsPendentes(manual=false){
+  // Buscar registros com status Pendente (calculado)
+  const {data,error}=await sb.from('registros').select('*').order('id',{ascending:true});
+  if(error){toast('Erro ao buscar registros: '+error.message,'err');return;}
+  const pendentes=(data||[]).filter(r=>r.status!=='Cancelado'&&calcStatus(r)==='Pendente');
+
+  if(!pendentes.length){
+    if(manual) toast('Nenhum registro pendente encontrado.','ok');
+    adicionarLog(manual?'Disparo manual':'Disparo agendado', 0, 'Nenhum registro pendente.');
+    return;
+  }
+
+  const btn=$('btnDispararAgora');
+  if(btn){btn.disabled=true;btn.innerHTML='<span class="spin"></span> Enviando...';}
+
+  let enviados=0, falhas=0;
+  emailjs.init(EMAILJS_PUBLIC_KEY);
+
+  for(const r of pendentes){
+    try{
+      await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
+        to_email:     EMAIL_DESTINATARIO,
+        cc_email:     EMAIL_COPIA,
+        registro_id:  String(r.id),
+        prestador:    r.prestador||'—',
+        data_saida:   fmtDate(r.data_saida),
+        resp_saida:   r.resp_saida||'—',
+        condicao_retorno: r.condicao_retorno||'—',
+        data_retorno: fmtDate(r.data_retorno),
+        status:       'Pendente',
+        link_sistema: window.location.href,
+        subject:      `Resultado de Análise Técnica Pendente — Registro ID #${r.id}`,
+      });
+      enviados++;
+      // Pequeno delay para não sobrecarregar o EmailJS
+      await new Promise(res=>setTimeout(res,400));
+    }catch(err){
+      falhas++;
+      console.warn(`[E-mail] Falha no registro #${r.id}:`,err);
+    }
+  }
+
+  if(btn){btn.disabled=false;btn.innerHTML='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg> Disparar Agora';}
+
+  const resumo=`${enviados} enviado${enviados!==1?'s':''}${falhas?`, ${falhas} falha${falhas!==1?'s':''}`:''} — ${pendentes.length} registro${pendentes.length!==1?'s':''} pendente${pendentes.length!==1?'s':''}`;
+  adicionarLog(manual?'Disparo manual':'Disparo agendado', enviados, resumo);
+  toast(manual?`${enviados} e-mail${enviados!==1?'s':''} enviado${enviados!==1?'s':''}!`:'Notificações enviadas!','ok');
+}
+
+function adicionarLog(tipo, qtd, detalhe){
+  const agora=new Date();
+  const hora=agora.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  const data=agora.toLocaleDateString('pt-BR');
+  emailDispatchLog.unshift({tipo,qtd,detalhe,hora,data});
+  if(emailDispatchLog.length>50) emailDispatchLog.pop();
+  renderEmailLog();
+}
+
+function renderEmailLog(){
+  const el=$('cfgEmailLog');
+  if(!el) return;
+  if(!emailDispatchLog.length){el.innerHTML='<p style="padding:12px 0;color:var(--text3)">Nenhum disparo registrado nesta sessão.</p>';return;}
+  el.innerHTML=emailDispatchLog.map(l=>`
+    <div style="display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">
+      <span class="badge ${l.qtd>0?'b-ok':'b-pendente'}" style="font-size:10px;flex-shrink:0">${l.qtd>0?'✓':'—'}</span>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:12px;color:var(--text);font-weight:600">${esc(l.tipo)}</div>
+        <div style="font-size:11px;color:var(--text2)">${esc(l.detalhe)}</div>
+      </div>
+      <div style="font-size:11px;color:var(--text3);white-space:nowrap;flex-shrink:0">${l.data} ${l.hora}</div>
+    </div>`).join('');
 }
 
 /* ══════════════════════════════════════════════
