@@ -430,9 +430,9 @@ td.truncate{max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ell
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
               Exportar Excel
             </button>
-            <button class="btn btn-primary" onclick="openRegistroModal()">
+            <button class="btn btn-primary" id="btnNovoRegistro" onclick="openNovoRegistro()">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-              Novo Registro
+              <span id="btnNovoRegistroTxt">Novo Registro</span>
             </button>
           </div>
         </div>
@@ -489,7 +489,7 @@ td.truncate{max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ell
             </table>
             <div id="emptyRegistros" class="empty" style="display:none">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-              <p>Nenhum registro encontrado</p>
+              <p id="emptyMsg">Nenhum registro encontrado</p>
             </div>
             <div id="loadingRegistros" class="loading-row"><span class="spin spin-dark"></span> Carregando...</div>
           </div>
@@ -894,6 +894,10 @@ function setupApp(){
   $('adminDivider').style.display=isAdmin?'':'none';
   setupLogo();
   applyResponsiveLayout();
+  // Adaptar botão "Novo Registro" para recebimento
+  const _isRec = (p?.setor==='recebimento' && p?.role!=='admin');
+  const _btnTxt = document.getElementById('btnNovoRegistroTxt');
+  if(_btnTxt) _btnTxt.textContent = _isRec ? 'Registrar Retorno' : 'Novo Registro';
 }
 
 /* ══════════════════════════════════════════════
@@ -967,7 +971,15 @@ async function loadRegistros(){
   const {data,error}=await sb.from('registros').select('*, anexos(id,nome_arquivo,url)').order('id',{ascending:false});
   $('loadingRegistros').style.display='none';
   if(error){toast('Erro ao carregar: '+error.message,'err');return;}
-  allRegistros=data||[];
+  const raw=data||[];
+  // Recebimento: só vê registros criados pela expedição
+  const _setor=currentProfile?.setor||'';
+  const _role=currentProfile?.role||'usuario';
+  if(_setor==='recebimento'&&_role!=='admin'){
+    allRegistros=raw.filter(r=>r.setor_criador==='expedicao');
+  } else {
+    allRegistros=raw;
+  }
   updateStats();
   renderRegistros();
   applyResponsiveLayout();
@@ -995,6 +1007,7 @@ function renderRegistros(){
   });
   const tb=$('tbRegistros');
   $('emptyRegistros').style.display=filtered.length?'none':'block';
+  const _emptyMsg=$('emptyMsg');if(_emptyMsg&&!filtered.length){const _s=currentProfile?.setor||'';_emptyMsg.textContent=(_s==='recebimento'&&currentProfile?.role!=='admin')?'Nenhum registro da Expedição encontrado':'Nenhum registro encontrado';}
   $('footerReg').textContent=`${filtered.length} de ${allRegistros.length} registro${allRegistros.length!==1?'s':''}`;
   const role=currentProfile?.role||'usuario';
   const setor=currentProfile?.setor||'';
@@ -1075,7 +1088,7 @@ const _origRenderReg=renderRegistros;
 /* ══════════════════════════════════════════════
    MODAL REGISTRO — ABRIR / SALVAR
 ══════════════════════════════════════════════ */
-function openRegistroModal(r=null){
+function openRegistroModal(r=null,modo=''){
   pendingFiles=[];
   $('rEditId').value=r?.id||'';
   $('mRegistroTitle').textContent=r?'Editar Registro':'Novo Registro';
@@ -1120,15 +1133,27 @@ function openRegistroModal(r=null){
   const isAdmin = role==='admin';
   const isExpedicao = setor==='expedicao' && !isAdmin;
   const isRecebimento = setor==='recebimento' && !isAdmin;
-  // Expedição: só preenche dados de saída
-  // Recebimento: vê dados de saída (readonly) + preenche retorno
-  // Logística e demais: veem tudo
+  const modoRetornoOnly = modo==='recebimento_retorno'; // novo registro pelo recebimento
+
+  const secaoSaida = document.querySelector('#mRegistro .section-card');
   const secaoRetorno=$('secaoRetorno');
-  if(isExpedicao){
+
+  if(modoRetornoOnly){
+    // Recebimento criando novo: mostra só seção de retorno + aviso
+    if(secaoSaida) secaoSaida.style.display='none';
+    secaoRetorno.style.display='';
+    $('mRegistroTitle').textContent='Registrar Retorno de Equipamento';
+    // Todos os campos de saída ficam null — serão preenchidos como modo recebimento
+    ['rDataSaida','rRespSaida','rPrestador','rCondicaoSaida','rObsSaida','rAcompExpedicao','rPlacaSaida','rMotoristaSaida'].forEach(fid=>{
+      const el=$(fid);if(el){el.value='';el.readOnly=true;if(el.tagName==='SELECT')el.disabled=true;}
+    });
+  } else if(isExpedicao){
+    if(secaoSaida) secaoSaida.style.display='';
     secaoRetorno.style.display='none';
   } else {
+    if(secaoSaida) secaoSaida.style.display='';
     secaoRetorno.style.display='';
-    // Recebimento: campos de saída somente leitura
+    // Recebimento editando: campos de saída somente leitura
     const saidaFields=['rDataSaida','rRespSaida','rPrestador','rCondicaoSaida','rObsSaida','rAcompExpedicao'];
     saidaFields.forEach(fid=>{
       const el=$(fid);if(!el)return;
@@ -1156,15 +1181,21 @@ function openRegistroModal(r=null){
 
 function calcStatus(r){
   if(!r) return 'Pendente';
-  const temNF = r?.nf && r.nf.trim();
-  const temPedido = r?.pedido && r.pedido.trim();
+  // Retornado: todos os campos obrigatórios de retorno preenchidos
   const temRetorno = r.data_retorno && r.resp_retorno && r.condicao_retorno && r.acomp_recebimento;
-  // Retornado: tem todos os dados de retorno
   if(temRetorno) return 'Retornado';
-  // Pendente: falta NF ou pedido (documentação incompleta)
-  if(!temNF || !temPedido) return 'Pendente';
-  // Em Manutenção: tem NF e pedido mas ainda não retornou
-  return 'Em Manutenção';
+  // Pendente padrão
+  return 'Pendente';
+}
+
+function openNovoRegistro(){
+  const setor=currentProfile?.setor||'';
+  const role=currentProfile?.role||'usuario';
+  if(setor==='recebimento'&&role!=='admin'){
+    openRegistroModal(null,'recebimento_retorno');
+  } else {
+    openRegistroModal();
+  }
 }
 
 function editRegistro(id){ const r=allRegistros.find(x=>x.id===id);if(r)openRegistroModal(r); }
@@ -1199,7 +1230,6 @@ async function saveRegistro(){
   let autoStatus;
   if(isAdmin) autoStatus=v('rStatus');
   else if(temRetorno) autoStatus='Retornado';
-  else if(nf&&pedido) autoStatus='Em Manutenção';
   else autoStatus='Pendente';
 
   const payload={
@@ -1224,9 +1254,17 @@ async function saveRegistro(){
     status:autoStatus,
   };
 
-  if(!payload.data_saida){showEl(errEl,'A data de saída é obrigatória.');return;}
-  if(!payload.prestador){showEl(errEl,'O prestador de serviço é obrigatório.');return;}
-  if(isExpedicao&&!foto_saida_url){showEl(errEl,'A foto do equipamento na saída é obrigatória para Expedição.');return;}
+  const isRecebimentoRetorno = (setor==='recebimento'&&!isAdmin&&!id);
+  if(!isRecebimentoRetorno){
+    if(!payload.data_saida){showEl(errEl,'A data de saída é obrigatória.');return;}
+    if(!payload.prestador){showEl(errEl,'O prestador de serviço é obrigatório.');return;}
+    if(isExpedicao&&!foto_saida_url){showEl(errEl,'A foto do equipamento na saída é obrigatória para Expedição.');return;}
+  } else {
+    if(!payload.data_retorno){showEl(errEl,'A data de retorno é obrigatória.');return;}
+    if(!payload.resp_retorno){showEl(errEl,'O responsável no retorno é obrigatório.');return;}
+    if(!payload.condicao_retorno){showEl(errEl,'A condição do equipamento no retorno é obrigatória.');return;}
+    if(!payload.acomp_recebimento){showEl(errEl,'O acompanhante de recebimento é obrigatório.');return;}
+  }
 
   const btn=$('savRegBtn'); setBtnLoading(btn,'Salvando...');
 
@@ -1236,6 +1274,7 @@ async function saveRegistro(){
     if(error){showEl(errEl,error.message);resetBtn(btn,'Salvar');return;}
   } else {
     payload.criado_por=currentUser.id;
+    payload.setor_criador=currentProfile?.setor||'';
     const {data,error}=await sb.from('registros').insert(payload).select().single();
     if(error){showEl(errEl,error.message);resetBtn(btn,'Salvar');return;}
     registroId=data.id;
