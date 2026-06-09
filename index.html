@@ -454,9 +454,9 @@ td.truncate{max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ell
           </div>
           <select class="filter-sel" id="fStatus" onchange="renderRegistros()">
             <option value="">Todos os status</option>
+            <option>Em Manutenção</option>
             <option>Pendente</option>
             <option>Retornado</option>
-            <option>Em Manutenção</option>
             <option>Cancelado</option>
           </select>
           <button class="btn btn-sm" onclick="loadRegistros()" title="Atualizar">
@@ -507,6 +507,33 @@ td.truncate{max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ell
           <div class="page-title">Usuários</div>
         </div>
         <div class="admin-cards" id="adminCards"></div>
+
+        <!-- Configurações de E-mail — apenas admins -->
+        <div id="emailConfigSection" style="display:none;margin-bottom:22px">
+          <div class="section-card" style="background:var(--surface);border:1px solid var(--border)">
+            <div class="section-card-title">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+              Configurações de Notificação por E-mail
+            </div>
+            <p style="font-size:12px;color:var(--text2);margin-bottom:14px">Defina para quem o sistema deve enviar o e-mail de alerta quando houver verificação técnica pendente.</p>
+            <div class="grid2">
+              <div class="form-field">
+                <label>Destinatário Principal (Para:)</label>
+                <input type="email" id="cfgEmailDestinatario" placeholder="email@empresa.com.br">
+              </div>
+              <div class="form-field">
+                <label>Cópia (CC:) <span style="font-size:10px;font-weight:400;color:var(--text3)">separar múltiplos por vírgula</span></label>
+                <input type="text" id="cfgEmailCopia" placeholder="cc1@empresa.com, cc2@empresa.com">
+              </div>
+            </div>
+            <div style="display:flex;justify-content:flex-end">
+              <button class="btn btn-primary btn-sm" id="btnSaveEmailCfg" onclick="saveEmailSettings()">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                Salvar Configurações
+              </button>
+            </div>
+          </div>
+        </div>
         <div class="table-card">
           <div class="table-wrap">
             <table>
@@ -619,11 +646,11 @@ td.truncate{max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ell
         <div class="grid3">
           <div class="form-field"><label>Nota Fiscal (NF)</label><input type="text" id="rNF" placeholder="Número da NF"></div>
           <div class="form-field"><label>Número do Pedido</label><input type="text" id="rPedido" placeholder="Número do pedido"></div>
-          <div class="form-field" id="rStatusField"><label>Status</label>
+          <div class="form-field" id="rStatusField"><label>Status <span id="rStatusNote" style="font-size:10px;font-weight:400;color:var(--text3);display:none">(calculado automaticamente — apenas Cancelado pode ser forçado)</span></label>
             <select id="rStatus" disabled>
+              <option value="Em Manutenção">Em Manutenção</option>
               <option value="Pendente">Pendente</option>
               <option value="Retornado">Retornado</option>
-              <option value="Em Manutenção">Em Manutenção</option>
               <option value="Cancelado">Cancelado</option>
             </select>
             <p id="rStatusDisplay" style="font-size:13px;font-weight:600;margin-top:4px;display:none"></p>
@@ -781,8 +808,9 @@ const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
 const EMAILJS_PUBLIC_KEY  = '61L873PhuQJksTI9P';   // ► substitua
 const EMAILJS_SERVICE_ID  = 'service_cazqiul';           // ► substitua
 const EMAILJS_TEMPLATE_ID = 'template_p6i0yhj';          // ► substitua
-const EMAIL_DESTINATARIO  = 'alyson.lopes@worldpost.com.br';
-const EMAIL_COPIA         = 'alysonblopes@gmail.com';
+// E-mails carregados dinamicamente das configurações (tabela app_settings no Supabase)
+let EMAIL_DESTINATARIO  = 'alyson.lopes@worldpost.com.br';
+let EMAIL_COPIA         = 'alysonblopes@gmail.com';
 
 /* ══════════════════════════════════════════════
    LOGO — substitua pela URL da sua logo
@@ -929,6 +957,8 @@ function setupApp(){
   const isAdmin=p?.role==='admin';
   $('adminNav').style.display=isAdmin?'':'none';
   $('adminDivider').style.display=isAdmin?'':'none';
+  const emailCfgSection=$('emailConfigSection');
+  if(emailCfgSection) emailCfgSection.style.display=isAdmin?'':'none';
   setupLogo();
   applyResponsiveLayout();
   // Adaptar botão "Novo Registro" para recebimento
@@ -953,7 +983,7 @@ function goPage(page){
   document.querySelectorAll('.nav-item').forEach(n=>{
     if(n.textContent.toLowerCase().includes(page.slice(0,4))) n.classList.add('active');
   });
-  if(page==='usuarios') loadUsers();
+  if(page==='usuarios') { loadUsers(); loadEmailSettings(); }
   if(page==='dashboard') renderDashboard();
   document.querySelector('.sidebar').classList.remove('open');
   $('sidebarOverlay').classList.remove('open');
@@ -1217,11 +1247,15 @@ function openRegistroModal(r=null,modo=''){
     });
   }
 
-  // Status: somente admin pode alterar
+  // Status: campo automático — admin pode forçar Cancelado
   const sel=$('rStatus');
   const disp=$('rStatusDisplay');
   if(isAdmin){
     sel.disabled=false; sel.style.display=''; disp.style.display='none';
+    sel.value=autoStatus;
+    // Adicionar nota de que é calculado automaticamente
+    const statusNote=$('rStatusNote');
+    if(statusNote) statusNote.style.display='';
   } else {
     sel.disabled=true; sel.style.display='none';
     disp.style.display=''; disp.textContent=autoStatus;
@@ -1268,13 +1302,17 @@ function updateVerificacaoUI(val){
 }
 
 function calcStatus(r){
-  if(!r) return 'Pendente';
+  if(!r) return 'Em Manutenção';
   const temRetorno = r.data_retorno && r.resp_retorno && r.condicao_retorno && r.acomp_recebimento;
-  if(!temRetorno) return 'Pendente';
-  // Retorno preenchido: só finaliza se verificação técnica for 'sim'
-  if(r.verificacao_tecnica === 'sim') return 'Retornado';
-  // Tem retorno mas falta verificação técnica
-  return 'Pendente';
+  // Sem dados de retorno → Em Manutenção
+  if(!temRetorno) return 'Em Manutenção';
+  // Tem retorno: verifica se falta NF, Pedido ou Verificação Técnica
+  const faltaNF = !r.nf;
+  const faltaPedido = !r.pedido;
+  const faltaVerif = r.verificacao_tecnica !== 'sim';
+  if(faltaNF || faltaPedido || faltaVerif) return 'Pendente';
+  // Tudo preenchido
+  return 'Retornado';
 }
 
 function openNovoRegistro(){
@@ -1318,9 +1356,26 @@ async function saveRegistro(){
   const temRetorno=dataRetorno&&respRetorno&&condRetorno&&acompRecebimento;
   const verificacaoTecnica = v('rVerificacaoTecnica')||null;
   let autoStatus;
-  if(isAdmin) autoStatus=v('rStatus');
-  else if(temRetorno && verificacaoTecnica==='sim') autoStatus='Retornado';
-  else autoStatus='Pendente';
+  if(isAdmin) {
+    // Admin: respeitar seleção manual, mas recalcular se for baseado em regras
+    const manualStatus = v('rStatus');
+    if(manualStatus === 'Cancelado') {
+      autoStatus = 'Cancelado';
+    } else {
+      // Recalcular automaticamente mesmo para admin
+      const _temRet = dataRetorno&&respRetorno&&condRetorno&&acompRecebimento;
+      if(!_temRet) autoStatus = 'Em Manutenção';
+      else if(!nf||!pedido||verificacaoTecnica!=='sim') autoStatus = 'Pendente';
+      else autoStatus = 'Retornado';
+      // Admin pode forçar Cancelado via select
+      if(manualStatus === 'Cancelado') autoStatus = 'Cancelado';
+    }
+  } else {
+    const _temRet = temRetorno;
+    if(!_temRet) autoStatus = 'Em Manutenção';
+    else if(!nf||!pedido||verificacaoTecnica!=='sim') autoStatus = 'Pendente';
+    else autoStatus = 'Retornado';
+  }
 
   const payload={
     data_saida:v('rDataSaida')||null,
@@ -1478,6 +1533,48 @@ async function enviarEmailVerificacaoPendente(r){
   } catch(err){
     console.warn('[E-mail] Falha ao enviar notificação:', err);
   }
+}
+
+/* ══════════════════════════════════════════════
+   CONFIGURAÇÕES DE E-MAIL
+══════════════════════════════════════════════ */
+async function loadEmailSettings(){
+  try{
+    const {data}=await sb.from('app_settings').select('*').eq('chave','email_config').maybeSingle();
+    if(data?.valor){
+      const cfg=JSON.parse(data.valor);
+      if(cfg.destinatario) EMAIL_DESTINATARIO=cfg.destinatario;
+      if(cfg.copia) EMAIL_COPIA=cfg.copia;
+    }
+    // Preencher campos se existirem
+    const fd=$('cfgEmailDestinatario');
+    const fc=$('cfgEmailCopia');
+    if(fd) fd.value=EMAIL_DESTINATARIO;
+    if(fc) fc.value=EMAIL_COPIA;
+  }catch(e){console.warn('[Settings] Erro ao carregar configurações de e-mail:',e);}
+}
+
+async function saveEmailSettings(){
+  const isAdmin=currentProfile?.role==='admin';
+  if(!isAdmin){toast('Sem permissão.','err');return;}
+  const dest=($('cfgEmailDestinatario')?.value||'').trim();
+  const copia=($('cfgEmailCopia')?.value||'').trim();
+  if(!dest){toast('Informe o e-mail destinatário.','err');return;}
+  const valor=JSON.stringify({destinatario:dest,copia});
+  const btn=$('btnSaveEmailCfg');
+  if(btn){btn.disabled=true;btn.textContent='Salvando...';}
+  const {data:existing}=await sb.from('app_settings').select('id').eq('chave','email_config').maybeSingle();
+  let error;
+  if(existing){
+    ({error}=await sb.from('app_settings').update({valor,atualizado_em:new Date().toISOString()}).eq('chave','email_config'));
+  } else {
+    ({error}=await sb.from('app_settings').insert({chave:'email_config',valor}));
+  }
+  if(btn){btn.disabled=false;btn.textContent='Salvar Configurações';}
+  if(error){toast('Erro ao salvar: '+error.message,'err');return;}
+  EMAIL_DESTINATARIO=dest;
+  EMAIL_COPIA=copia;
+  toast('Configurações de e-mail salvas!','ok');
 }
 
 /* ══════════════════════════════════════════════
